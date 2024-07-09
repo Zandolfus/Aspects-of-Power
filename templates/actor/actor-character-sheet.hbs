@@ -64,7 +64,7 @@
     <a class="item" data-tab="features">Features</a>
     <a class="item" data-tab="description">Description</a>
     <a class="item" data-tab="items">Items</a>
-    <a class="item" data-tab="spells">Spells</a>
+    <a class="item" data-tab="skills">Skills</a>
     <a class="item" data-tab="effects">Effects</a>
   </nav>
 
@@ -78,10 +78,10 @@
 
           <div class="abilities flexcol">
             {{#each system.abilities as |ability key|}}
-            <div class="statistic flexrow flex-group-center">
-              <label for="system.abilities.{{key}}.value" class="resource-label rollable flexlarge align-left" data-roll="d20+@abilities.{{key}}.mod" data-label="{{localize (lookup @root.config.abilities key)}}">{{localize (lookup @root.config.abilities key)}}</label>
-              <input type="text" name="system.abilities.{{key}}.value" value="{{stat.value}}" data-dtype="Number"/>
-              <span class="stat-mod rollable" data-roll="d20+@abilities.{{key}}.mod" data-label="{{localize (lookup @root.config.abilities key)}}">{{numberFormat stat.mod decimals=0 sign=true}}</span>
+            <div class="ability flexrow flex-group-center">
+              <label for="system.abilities.{{key}}.value" class="resource-label rollable flexlarge align-left" data-roll="(d20/100)*@abilities.{{key}}.mod+@abilities.{{key}}.mod" data-label="{{localize (lookup @root.config.abilities key)}}">{{localize (lookup @root.config.abilities key)}}</label>
+              <input type="text" name="system.abilities.{{key}}.value" value="{{ability.value}}" data-dtype="Number"/>
+              <span class="stat-mod rollable" data-roll="(d20/100)*@abilities.{{key}}.mod+@abilities.{{key}}.mod" data-label="{{localize (lookup @root.config.abilities key)}}">{{numberFormat ability.mod decimals=0 sign=true}}</span>
             </div>
             {{/each}}
           </div>
@@ -104,9 +104,9 @@
        {{> "systems/aspects-of-power/templates/actor/parts/actor-items.hbs"}}
     </div>
 
-    {{!-- Owned Spells Tab --}}
-    <div class="tab spells" data-group="primary" data-tab="spells">
-      {{> "systems/aspects-of-power/templates/actor/parts/actor-spells.hbs"}}
+    {{!-- Owned Skills Tab --}}
+    <div class="tab skills" data-group="primary" data-tab="skills">
+      {{> "systems/aspects-of-power/templates/actor/parts/actor-skills.hbs"}}
     </div>
 
     {{!-- Active Effects Tab --}}

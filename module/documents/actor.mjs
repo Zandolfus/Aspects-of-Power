@@ -45,13 +45,18 @@ export class AspectsofPowerActor extends Actor {
     if (actorData.type !== 'character') return;
 
     // Make modifications to data here. For example:
-    const systemData = actorData.system;
+    const systemData = actorData.system; 
+
 
     // Loop through ability scores, and add their modifiers to our sheet output.
     for (let [key, ability] of Object.entries(systemData.abilities)) {
       // Calculate the modifier using aspects rules.
-      ability.mod = Math.floor((1650 / (1 + Math.exp(-0.005 * (ability.value - 500)))) - 115);
+      ability.mod = Math.round((1650 / (1 + Math.exp(-0.005 * (ability.value - 500)))) - 115);
     }
+    systemData.health.max = systemData.abilities.vitality.mod;
+    systemData.mana.max = systemData.abilities.willpower.mod;
+    systemData.stamina.max = systemData.abilities.endurance.mod;
+
   }
 
   /**

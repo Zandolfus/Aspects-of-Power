@@ -59,7 +59,7 @@ export class AspectsofPowerItem extends Item {
       // Invoke the roll and submit it to chat.
       const roll = new Roll(rollData.formula, rollData);
       // If you need to store the value first, uncomment the next line.
-      // const result = await roll.evaluate();
+      const result = await roll.evaluate();
       roll.toMessage({
         speaker: speaker,
         rollMode: rollMode,

@@ -16,9 +16,10 @@
       "Item": "AspectsofPower Item Sheet"
     },
     "Item": {
-      "Spell": {
-        "SpellLVL": "Level {level} Spells",
-        "AddLVL": "Add LVL {level}"
+      "Skill": {
+        "skillType": "{type} Skill",
+        "addType": "Add type {type}"
+
       }
     },
     "Effect": {
@@ -38,7 +39,7 @@
     "Item": {
       "item": "Item",
       "feature": "Feature",
-      "spell": "Spell"
+      "skill": "Skill"
     }
   }
 }

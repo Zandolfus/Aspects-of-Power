@@ -105,17 +105,9 @@ export class AspectsofPowerActorSheet extends ActorSheet {
     // Initialize containers.
     const gear = [];
     const features = [];
-    const spells = {
-      0: [],
-      1: [],
-      2: [],
-      3: [],
-      4: [],
-      5: [],
-      6: [],
-      7: [],
-      8: [],
-      9: [],
+    const skills = {
+      "Passive": [],
+      "Active": [],
     };
 
     // Iterate through items, allocating to containers
@@ -129,10 +121,10 @@ export class AspectsofPowerActorSheet extends ActorSheet {
       else if (i.type === 'feature') {
         features.push(i);
       }
-      // Append to spells.
-      else if (i.type === 'spell') {
-        if (i.system.spellLevel != undefined) {
-          spells[i.system.spellLevel].push(i);
+      // Append to skills.
+      else if (i.type === 'skill') {
+        if (i.system.skillType != undefined) {
+          skills[i.system.skillType].push(i);
         }
       }
     }
@@ -140,7 +132,7 @@ export class AspectsofPowerActorSheet extends ActorSheet {
     // Assign and return
     context.gear = gear;
     context.features = features;
-    context.spells = spells;
+    context.skills = skills;
   }
 
   /* -------------------------------------------- */

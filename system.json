@@ -58,5 +58,5 @@
     "diagonals": 4
   },
   "primaryTokenAttribute": "health",
-  "secondaryTokenAttribute": "power"
+  "secondaryTokenAttribute": "mana"
 }

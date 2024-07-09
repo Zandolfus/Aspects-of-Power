@@ -8,7 +8,7 @@ export const preloadHandlebarsTemplates = async function () {
     // Actor partials.
     'systems/aspects-of-power/templates/actor/parts/actor-features.hbs',
     'systems/aspects-of-power/templates/actor/parts/actor-items.hbs',
-    'systems/aspects-of-power/templates/actor/parts/actor-spells.hbs',
+    'systems/aspects-of-power/templates/actor/parts/actor-skills.hbs',
     'systems/aspects-of-power/templates/actor/parts/actor-effects.hbs',
     // Item partials
     'systems/aspects-of-power/templates/item/parts/item-effects.hbs',
