@@ -75,7 +75,7 @@ export class AspectsofPowerActorSheet extends ActorSheet {
         relativeTo: this.actor,
       }
     );
-
+    context.rollData = context.actor.getRollData();
     // Prepare active effects
     context.effects = prepareActiveEffectCategories(
       // A generator that returns all effects stored on the actor

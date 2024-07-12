@@ -37,7 +37,7 @@
         <div class='grid grid-4col'>
           <div class='grid-span-1'>
             <label class='resource-label'>Ability</label>
-            <select ability="Abilities" id="ability">
+            <select ability="Abilities" id="ability" value='{{system.itemability}}'>
               <option value="vitality">Vitality</option>
               <option value="strength">Strength</option>
               <option value="dexterity">Dexterity</option>
@@ -57,7 +57,7 @@
             <input type='text' name='system.roll.diceSize' value='{{system.roll.diceSize}}' data-dtype='String' />
           </div>
           <div class='grid-span-1'>
-            <label class='resource-label'>Roll Modifier</label>
+            <label class='resource-label'>Multiplier</label>
             <input type='text' name='system.roll.diceBonus' value='{{system.roll.diceBonus}}' data-dtype='String' />
           </div>
         </div>

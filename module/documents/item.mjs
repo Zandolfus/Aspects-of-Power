@@ -11,7 +11,11 @@ export class AspectsofPowerItem extends Item {
     // preparation methods overridden (such as prepareBaseData()).
     super.prepareData();
   }
-
+  prepareDerivedData() {
+    const itemData = this;
+    const actorData = this.actor;
+    super.prepareDerivedData();
+  }
   /**
    * Prepare a data object which defines the data schema used by dice roll commands against this Item
    * @override
@@ -55,7 +59,6 @@ export class AspectsofPowerItem extends Item {
     else {
       // Retrieve roll data.
       const rollData = this.getRollData();
-
       // Invoke the roll and submit it to chat.
       const roll = new Roll(rollData.formula, rollData);
       // If you need to store the value first, uncomment the next line.

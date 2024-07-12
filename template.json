@@ -91,7 +91,7 @@
     "skill": {
       "templates": ["base"],
       "skillType": "Passive",
-      "formula": "d20 + @strength.mod + ceil(@level / 2)"
+      "formula": "123"
     }
   }
 }

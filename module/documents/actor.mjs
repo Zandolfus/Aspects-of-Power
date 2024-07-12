@@ -29,13 +29,20 @@ export class AspectsofPowerActor extends Actor {
    */
   prepareDerivedData() {
     const actorData = this;
+    const itemData = this.item;
     const systemData = actorData.system;
     const flags = actorData.flags.aspectsofpower || {};
+    for (let [key, ability] of Object.entries(systemData.abilities)) {
+      // Calculate the modifier using aspects rules.
+      ability.mod = Math.round((1650 / (1 + Math.exp(-0.005 * (ability.value - 500)))) - 115);
+    }
+    itemData.system.formula = ((itemData.system.roll.diceNum * itemData.system.roll.diceSize*.001*actorData.ability.mod) + actorData.ability.mod)*itemData.system.diceBonus;
 
     // Make separate methods for each Actor type (character, npc, etc.) to keep
     // things organized.
     this._prepareCharacterData(actorData);
     this._prepareNpcData(actorData);
+
   }
 
   /**
@@ -49,10 +56,7 @@ export class AspectsofPowerActor extends Actor {
 
 
     // Loop through ability scores, and add their modifiers to our sheet output.
-    for (let [key, ability] of Object.entries(systemData.abilities)) {
-      // Calculate the modifier using aspects rules.
-      ability.mod = Math.round((1650 / (1 + Math.exp(-0.005 * (ability.value - 500)))) - 115);
-    }
+
     systemData.health.max = systemData.abilities.vitality.mod;
     systemData.mana.max = systemData.abilities.willpower.mod;
     systemData.stamina.max = systemData.abilities.endurance.mod;
