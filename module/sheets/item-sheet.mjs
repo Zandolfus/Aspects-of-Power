@@ -41,7 +41,8 @@ export class AspectsofPowerItemSheet extends ItemSheet {
   async getData() {
     // Retrieve base data structure.
     const context = super.getData();
-
+    console.log("this is context",context);
+    context.optionObj = CONFIG.ASPECTSOFPOWER.abilities;
     // Use a safe clone of the item data for further operations.
     const itemData = this.document.toObject(false);
 

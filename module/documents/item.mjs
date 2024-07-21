@@ -14,6 +14,9 @@ export class AspectsofPowerItem extends Item {
   prepareDerivedData() {
     const itemData = this;
     const actorData = this.actor;
+    //console.log(actorData);
+
+    //console.log(itemData.system.formula);
     super.prepareDerivedData();
   }
   /**
@@ -59,6 +62,17 @@ export class AspectsofPowerItem extends Item {
     else {
       // Retrieve roll data.
       const rollData = this.getRollData();
+      console.log("Dice Value =", rollData.roll.dice);
+      console.log("Ability Mod Value:", rollData.roll.abilities);
+      console.log("Dice Bonus Value:", rollData.roll.diceBonus);
+      console.log("Testing:", this.actor);
+
+      console.log("rollData value", rollData);
+      rollData.roll.abilitymod=this.actor.system.abilities[rollData.roll.abilities].mod;
+      console.log("ability:", rollData.roll.abilitymod);
+
+      rollData.formula="((("+rollData.roll.dice+"/100*"+rollData.roll.abilitymod+")+"+rollData.roll.abilitymod+")*"+rollData.roll.diceBonus+")";
+
       // Invoke the roll and submit it to chat.
       const roll = new Roll(rollData.formula, rollData);
       // If you need to store the value first, uncomment the next line.

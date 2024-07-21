@@ -32,33 +32,29 @@
     <div class='tab damage' data-group='primary' data-tab='damage'>
       {{! As you add new fields, add them in here! }}
       <div class='resource'>
-        <label class='resource-label'>Roll Formula:</label>
-        <span>{{system.formula}}</span>
         <div class='grid grid-4col'>
+          <div class='grid grid-4col'>
+            <div class='grid-span-1'>
+              <label class='resource-label'>Ability</label>
+              <select name='system.roll.abilities' data-dtype='String'>
+                <option value="vitality" {{#if (eq system.roll.abilities "vitality")}}selected{{/if}}>Vitality</option>
+                <option value="strength" {{#if (eq system.roll.abilities "strength")}}selected{{/if}}>Strength</option>
+                <option value="dexterity" {{#if (eq system.roll.abilities "dexterity")}}selected{{/if}}>Dexterity</option>
+                <option value="toughness" {{#if (eq system.roll.abilities "toughness")}}selected{{/if}}>Toughness</option>
+                <option value="intelligence" {{#if (eq system.roll.abilities "intelligence")}}selected{{/if}}>Intelligence</option>
+                <option value="willpower" {{#if (eq system.roll.abilities "willpower")}}selected{{/if}}>Willpower</option>
+                <option value="wisdom" {{#if (eq system.roll.abilities "wisdom")}}selected{{/if}}>Wisdom</option>
+                <option value="perception" {{#if (eq system.roll.abilities "perception")}}selected{{/if}}>Perception</option>
+              </select>
+            </div>
           <div class='grid-span-1'>
-            <label class='resource-label'>Ability</label>
-            <select ability="Abilities" id="ability" value='{{system.itemability}}'>
-              <option value="vitality">Vitality</option>
-              <option value="strength">Strength</option>
-              <option value="dexterity">Dexterity</option>
-              <option value="toughness">Toughness</option>
-              <option value="intelligence">Intelligence</option>
-              <option value="willpower">Willpower</option>
-              <option value="wisdom">Wisdom</option>
-              <option value="perception">Perception</option>
-            </select>
+            <label class='resource-label'>Dice</label>
+            <input type='text' name='system.roll.dice' value='{{system.roll.dice}}' data-dtype='String' />
           </div>
-          <div class='grid-span-1'>
-            <label class='resource-label'>Number of Dice</label>
-            <input type='text' name='system.roll.diceNum' value='{{system.roll.diceNum}}' data-dtype='Number' />
-          </div>
-          <div class='grid-span-1'>
-            <label class='resource-label'>Die Size</label>
-            <input type='text' name='system.roll.diceSize' value='{{system.roll.diceSize}}' data-dtype='String' />
-          </div>
+
           <div class='grid-span-1'>
             <label class='resource-label'>Multiplier</label>
-            <input type='text' name='system.roll.diceBonus' value='{{system.roll.diceBonus}}' data-dtype='String' />
+            <input type='text' name='system.roll.diceBonus' value='{{system.roll.diceBonus}}' data-dtype='Number' />
           </div>
         </div>
 

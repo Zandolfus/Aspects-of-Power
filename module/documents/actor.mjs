@@ -36,7 +36,9 @@ export class AspectsofPowerActor extends Actor {
       // Calculate the modifier using aspects rules.
       ability.mod = Math.round((1650 / (1 + Math.exp(-0.005 * (ability.value - 500)))) - 115);
     }
-    itemData.system.formula = ((itemData.system.roll.diceNum * itemData.system.roll.diceSize*.001*actorData.ability.mod) + actorData.ability.mod)*itemData.system.diceBonus;
+    systemData.health.max = systemData.abilities.vitality.mod;
+    systemData.mana.max = systemData.abilities.willpower.mod;
+    systemData.stamina.max = systemData.abilities.endurance.mod;
 
     // Make separate methods for each Actor type (character, npc, etc.) to keep
     // things organized.
@@ -57,9 +59,6 @@ export class AspectsofPowerActor extends Actor {
 
     // Loop through ability scores, and add their modifiers to our sheet output.
 
-    systemData.health.max = systemData.abilities.vitality.mod;
-    systemData.mana.max = systemData.abilities.willpower.mod;
-    systemData.stamina.max = systemData.abilities.endurance.mod;
 
   }
 
@@ -93,7 +92,12 @@ export class AspectsofPowerActor extends Actor {
    */
   _getCharacterRollData(data) {
     if (this.type !== 'character') return;
-
+    // var dice = "3d6";
+    // console.log("Dice value:", dice);
+    // var diceBonus = 1;
+    // console.log("Multiplier value:", diceBonus);
+    // var abilities = "strength";
+    // console.log("abilities value:", abilities);
     // Copy the ability scores to the top level, so that rolls can use
     // formulas like `@str.mod + 4`.
     if (data.abilities) {
