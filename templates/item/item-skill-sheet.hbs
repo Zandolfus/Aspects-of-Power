@@ -33,7 +33,7 @@
       {{! As you add new fields, add them in here! }}
       <div class='resource'>
         <div class='grid grid-4col'>
-          <div class='grid grid-4col'>
+          <div class='grid grid-5col'>
             <div class='grid-span-1'>
               <label class='resource-label'>Ability</label>
               <select name='system.roll.abilities' data-dtype='String'>
@@ -55,6 +55,18 @@
           <div class='grid-span-1'>
             <label class='resource-label'>Multiplier</label>
             <input type='text' name='system.roll.diceBonus' value='{{system.roll.diceBonus}}' data-dtype='Number' />
+          </div>
+          <div class='grid-span-1'>
+              <label class='resource-label'>Resource</label>
+              <select name='system.roll.resource' data-dtype='String'>
+                <option value="mana" {{#if (eq system.roll.resource "mana")}}selected{{/if}}>Mana</option>
+                <option value="stamina" {{#if (eq system.roll.resource "stamina")}}selected{{/if}}>Stamina</option>
+                <option value="health" {{#if (eq system.roll.resource "health")}}selected{{/if}}>Health</option>
+              </select>
+          </div>
+          <div class='grid-span-1'>
+            <label class='resource-label'>Cost</label>
+            <input type='text' name='system.roll.cost' value='{{system.roll.cost}}' data-dtype='Number' />
           </div>
         </div>
 
