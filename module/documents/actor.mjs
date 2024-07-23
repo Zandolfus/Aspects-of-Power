@@ -40,6 +40,11 @@ export class AspectsofPowerActor extends Actor {
     systemData.mana.max = systemData.abilities.willpower.mod;
     systemData.stamina.max = systemData.abilities.endurance.mod;
 
+    systemData.defense.melee.value = Math.max(systemData.abilities.dexterity.mod, systemData.abilities.strength.mod);
+    systemData.defense.ranged.value = Math.max(systemData.abilities.dexterity.mod, systemData.abilities.perception.mod);
+    systemData.defense.mind.value = Math.max(systemData.abilities.intelligence.mod, systemData.abilities.wisdom.mod);
+    systemData.defense.soul.value =  Math.max(systemData.abilities.wisdom.mod, systemData.abilities.willpower.mod);
+
     // Make separate methods for each Actor type (character, npc, etc.) to keep
     // things organized.
     this._prepareCharacterData(actorData);

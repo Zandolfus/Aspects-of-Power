@@ -5,7 +5,7 @@
     <img class="profile-img" src="{{actor.img}}" data-edit="img" title="{{actor.name}}" height="100" width="100"/>
     <div class="header-fields">
       <h1 class="charname"><input name="name" type="text" value="{{actor.name}}" placeholder="Name"/></h1>
-      <div class="resources grid grid-4col">
+      <div class="resources grid grid-3col">
 
         <div class="resource flex-group-center">
           <label for="system.health.value" class="resource-label">Health</label>
@@ -54,7 +54,31 @@
             <input type="text" name="system.attributes.professionLevel.value" value="{{system.attributes.professionLevel.value}}" data-dtype="Number"/>
           </div>
         </div>
-
+      </div>
+      <div class="resources grid grid-4col">
+        <div class="resource flex-group-center">
+          <label for="system.defense.melee.value" class="resource-label">Melee Defense</label>
+          <div class="resource-content flexrow flex-center flex-between">
+            <input type="text" name="system.defense.melee.value" value="{{system.defense.melee.value}}" data-dtype="Number"/>
+          </div>
+        </div>
+        <div class="resource flex-group-center">
+          <label for="system.defense.ranged.value" class="resource-label">Ranged Defense</label>
+          <div class="resource-content flexrow flex-center flex-between">
+            <input type="text" name="system.defense.ranged.value" value="{{system.defense.ranged.value}}" data-dtype="Number"/>
+          </div>
+        </div>
+        <div class="resource flex-group-center">
+          <label for="system.defense.mind.value" class="resource-label">Mind Defense</label>
+          <div class="resource-content flexrow flex-center flex-between">
+            <input type="text" name="system.defense.mind.value" value="{{system.defense.mind.value}}" data-dtype="Number"/>
+          </div>
+        </div>
+        <div class="resource flex-group-center">
+          <label for="system.defense.soul.value" class="resource-label">Soul Defense</label>
+          <div class="resource-content flexrow flex-center flex-between">
+            <input type="text" name="system.defense.soul.value" value="{{system.defense.soul.value}}" data-dtype="Number"/>
+          </div>
       </div>
     </div>
   </header>
@@ -88,7 +112,7 @@
         </aside>
 
         <section class="main grid-span-2">
-          {{> "systems/aspects-of-power/templates/actor/parts/actor-features.hbs"}}
+          {{> "systems/aspects-of-power/templates/actor/parts/actor-skills.hbs"}}
         </section>
 
       </section>

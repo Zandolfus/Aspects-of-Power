@@ -18,9 +18,7 @@
           "min": 0,
           "max": 5
         },
-        "defense": {
-          "value": 0
-        },
+
         "biography": ""
       }
     },
@@ -65,13 +63,27 @@
         "perception": {
           "value": 5
         }
+      },
+      "defense": {
+        "melee": {
+          "value": 0
+        },
+        "ranged": {
+          "value": 0
+        },
+        "mind": {
+          "value": 0
+        },
+        "soul": {
+          "value": 0
+        }
+      }
       }
     },
     "npc": {
       "templates": ["base"],
       "cr": 0
-    }
-  },
+    },
   "Item": {
     "types": ["item", "feature", "skill"],
     "templates": {
