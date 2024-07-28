@@ -76,9 +76,15 @@ export class AspectsofPowerItem extends Item {
       console.log("test resource type:", rollData.roll.resourcevalue);
 
       if (rollData.roll.resourcevalue >= rollData.roll.cost) {
-        rollData.formula="((("+rollData.roll.dice+"/100*"+rollData.roll.abilitymod+")+"+rollData.roll.abilitymod+")*"+rollData.roll.diceBonus+")";
+        if (rollData.roll.type == "weapon"){
+          rollData.formula="((("+rollData.roll.dice+"/50*"+rollData.roll.abilitymod+")+"+rollData.roll.abilitymod+"/1.25"+")*"+rollData.roll.diceBonus+")";
+        }
+        else {
+          rollData.formula="((("+rollData.roll.dice+"/100*"+rollData.roll.abilitymod+")+"+rollData.roll.abilitymod+")*"+rollData.roll.diceBonus+")";
+        }
         this.actor.system[rollData.roll.resource].value = this.actor.system[rollData.roll.resource].value - rollData.roll.cost;
-        this.prepareData();
+        this.update();
+        this.actor.sheet._render();
         // Invoke the roll and submit it to chat.
         const roll = new Roll(rollData.formula, rollData);
         // If you need to store the value first, uncomment the next line.

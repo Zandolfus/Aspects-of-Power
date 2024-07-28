@@ -68,8 +68,15 @@
             <label class='resource-label'>Cost</label>
             <input type='text' name='system.roll.cost' value='{{system.roll.cost}}' data-dtype='Number' />
           </div>
+          <div class='grid-span-1'>
+            <label class='resource-label'>Skill Type</label>
+              <select name='system.roll.type' data-dtype='String'>
+                <option value="weapon" {{#if (eq system.roll.type "weapon")}}selected{{/if}}>Weapon</option>
+                <option value="magic" {{#if (eq system.roll.type "magic")}}selected{{/if}}>Magic</option>
+              </select>
+          </div>
         </div>
-
+      </div>
       </div>
     </div>
 

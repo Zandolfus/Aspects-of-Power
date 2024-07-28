@@ -34,13 +34,13 @@ export class AspectsofPowerActor extends Actor {
     const flags = actorData.flags.aspectsofpower || {};
     for (let [key, ability] of Object.entries(systemData.abilities)) {
       // Calculate the modifier using aspects rules.
-      ability.mod = Math.round((1650 / (1 + Math.exp(-0.005 * (ability.value - 500)))) - 115);
+      ability.mod = Math.round((6000 / (1 + Math.exp(-0.001 * (ability.value - 500)))) - 2265);
     }
     systemData.health.max = systemData.abilities.vitality.mod;
     systemData.mana.max = systemData.abilities.willpower.mod;
     systemData.stamina.max = systemData.abilities.endurance.mod;
 
-    systemData.defense.melee.value = Math.max(systemData.abilities.dexterity.mod, systemData.abilities.strength.mod);
+    systemData.defense.melee.value = systemData.abilities.dexterity.mod + systemData.abilities.strength.mod*.3;
     systemData.defense.ranged.value = Math.max(systemData.abilities.dexterity.mod, systemData.abilities.perception.mod);
     systemData.defense.mind.value = Math.max(systemData.abilities.intelligence.mod, systemData.abilities.wisdom.mod);
     systemData.defense.soul.value =  Math.max(systemData.abilities.wisdom.mod, systemData.abilities.willpower.mod);
