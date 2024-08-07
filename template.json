@@ -4,12 +4,12 @@
     "templates": {
       "base": {
         "health": {
-          "value": 10,
+          "value": 5,
           "min": 0,
           "max": 10
         },
         "stamina": {
-          "value": 10,
+          "value": 5,
           "min": 0,
           "max": 10
         },
@@ -25,14 +25,18 @@
     "character": {
       "templates": ["base"],
       "attributes": {
-        "classLevel": {
-          "value": 1
+        "class": {
+          "level": 1,
+          "name": "Uninitiated"
         },
-        "raceLevel": {
-          "value": 0
+        "race": {
+          "level": 0,
+          "name": "Human",
+          "rank": "G"
         },
-        "professionLevel": {
-          "value": 0
+        "profession": {
+          "level": 0,
+          "name": "Uninitiated"
         }
       },
       "abilities": {
@@ -65,6 +69,9 @@
         }
       },
       "defense": {
+        "armor": {
+          "value": 0
+        },
         "melee": {
           "value": 0
         },

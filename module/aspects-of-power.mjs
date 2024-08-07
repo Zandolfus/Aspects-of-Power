@@ -29,7 +29,7 @@ Hooks.once('init', function () {
    * @type {String}
    */
   CONFIG.Combat.initiative = {
-    formula: '1d20*@dexterity.mod/100 + @dexterity.mod',
+    formula: '1d20*@perception.mod/100 + @perception.mod',
     decimals: 2,
   };
 

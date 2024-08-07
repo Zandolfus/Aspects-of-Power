@@ -40,10 +40,20 @@ export class AspectsofPowerActor extends Actor {
     systemData.mana.max = systemData.abilities.willpower.mod;
     systemData.stamina.max = systemData.abilities.endurance.mod;
 
-    systemData.defense.melee.value = systemData.abilities.dexterity.mod + systemData.abilities.strength.mod*.3;
-    systemData.defense.ranged.value = Math.max(systemData.abilities.dexterity.mod, systemData.abilities.perception.mod);
-    systemData.defense.mind.value = Math.max(systemData.abilities.intelligence.mod, systemData.abilities.wisdom.mod);
-    systemData.defense.soul.value =  Math.max(systemData.abilities.wisdom.mod, systemData.abilities.willpower.mod);
+    if (systemData.attributes.race.level <= 9)
+      systemData.attributes.race.rank = "G";
+    else if (systemData.attributes.race.level <= 24)
+      systemData.attributes.race.rank = "F";
+    else if (systemData.attributes.race.level <= 99)
+      systemData.attributes.race.rank = "E";
+    else if (systemData.attributes.race.level <= 199)
+      systemData.attributes.race.rank = "D";
+
+    systemData.defense.melee.value = Math.round(systemData.abilities.dexterity.mod + systemData.abilities.strength.mod*.3);
+    //consider if perception should have greater impact at greater ranges
+    systemData.defense.ranged.value = Math.round(systemData.abilities.dexterity.mod*.3 + systemData.abilities.perception.mod);
+    systemData.defense.mind.value = Math.round(systemData.abilities.intelligence.mod + systemData.abilities.wisdom.mod*.3);
+    systemData.defense.soul.value =  Math.round(systemData.abilities.wisdom.mod + systemData.abilities.willpower.mod*.3);
 
     // Make separate methods for each Actor type (character, npc, etc.) to keep
     // things organized.

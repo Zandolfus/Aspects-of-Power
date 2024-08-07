@@ -35,27 +35,56 @@
         </div>
 
         <div class="resource flex-group-center">
-          <label for="system.attributes.classLevel.value" class="resource-label">Class Level</label>
+          <label for="system.attributes.class.level" class="resource-label">Class Level</label>
           <div class="resource-content flexrow flex-center flex-between">
-            <input type="text" name="system.attributes.classLevel.value" value="{{system.attributes.classLevel.value}}" data-dtype="Number"/>
+            <input type="text" name="system.attributes.class.level" value="{{system.attributes.class.level}}" data-dtype="Number"/>
           </div>
         </div>
 
         <div class="resource flex-group-center">
-          <label for="system.attributes.raceLevel.value" class="resource-label">Race Level</label>
+          <label for="system.attributes.race.level" class="resource-label">Race Level</label>
           <div class="resource-content flexrow flex-center flex-between">
-            <input type="text" name="system.attributes.raceLevel.value" value="{{system.attributes.raceLevel.value}}" data-dtype="Number"/>
+            <input type="text" name="system.attributes.race.level" value="{{system.attributes.race.level}}" data-dtype="Number"/>
           </div>
         </div>
 
         <div class="resource flex-group-center">
-          <label for="system.attributes.professionLevel.value" class="resource-label">Profession Level</label>
+          <label for="system.attributes.profession.level" class="resource-label">Profession Level</label>
           <div class="resource-content flexrow flex-center flex-between">
-            <input type="text" name="system.attributes.professionLevel.value" value="{{system.attributes.professionLevel.value}}" data-dtype="Number"/>
+            <input type="text" name="system.attributes.profession.level" value="{{system.attributes.profession.level}}" data-dtype="Number"/>
+          </div>
+        </div>
+
+        <div class="resource flex-group-center">
+          <label for="system.attributes.class.name" class="resource-label">Class</label>
+          <div class="resource-content flexrow flex-center flex-between">
+            <input type="text" name="system.attributes.class.name" value="{{system.attributes.class.name}}" data-dtype="String"/>
+          </div>
+        </div>
+
+        <div class="resource flex-group-center">
+          <label for="system.attributes.race.name" class="resource-label">Race</label>
+          <div class="resource-content flexrow flex-center flex-between">
+            <input type="text" name="system.attributes.race.name" value="{{system.attributes.race.name}}" data-dtype="String"/>
+                        <span class="resource-label flex-center flex-between">Rank</span>
+            <input type="text" name="system.attributes.race.rank" value="{{system.attributes.race.rank}}" data-dtype="String"/>
+          </div>
+        </div>
+
+        <div class="resource flex-group-center">
+          <label for="system.attributes.profession.name" class="resource-label">Profession</label>
+          <div class="resource-content flexrow flex-center flex-between">
+            <input type="text" name="system.attributes.profession.name" value="{{system.attributes.profession.name}}" data-dtype="String"/>
           </div>
         </div>
       </div>
-      <div class="resources grid grid-4col">
+      <div class="resources grid grid-5col">
+        <div class="resource flex-group-center">
+          <label for="system.defense.armor.value" class="resource-label">Armor Defense</label>
+          <div class="resource-content flexrow flex-center flex-between">
+            <input type="text" name="system.defense.armor.value" value="{{system.defense.armor.value}}" data-dtype="Number" />
+          </div>
+        </div>
         <div class="resource flex-group-center">
           <label for="system.defense.melee.value" class="resource-label">Melee Defense</label>
           <div class="resource-content flexrow flex-center flex-between">
