@@ -12,7 +12,7 @@ export class AspectsofPowerActorSheet extends ActorSheet {
   static get defaultOptions() {
     return foundry.utils.mergeObject(super.defaultOptions, {
       classes: ['aspects-of-power', 'sheet', 'actor'],
-      width: 600,
+      width: 800,
       height: 600,
       tabs: [
         {

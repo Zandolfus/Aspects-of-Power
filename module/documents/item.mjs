@@ -77,11 +77,18 @@ export class AspectsofPowerItem extends Item {
 
       if (rollData.roll.resourcevalue >= rollData.roll.cost) {
         if (rollData.roll.type == "weapon"){
+          rollData.formula="((((d20/100)*("+this.actor.system.abilities.dexterity.mod+"+"+this.actor.system.abilities.strength.mod+"*(3/10)))+"+this.actor.system.abilities.dexterity.mod+"+"+this.actor.system.abilities.strength.mod+"*(3/10)))*(911/1000)";
+          const roll = new Roll(rollData.formula, rollData);
+          roll.toMessage({
+            speaker: speaker,
+            rollMode: rollMode,
+            flavor: "To Hit",
+          });
           rollData.formula="((("+rollData.roll.dice+"/50*"+rollData.roll.abilitymod+")+"+rollData.roll.abilitymod+"/1.25"+")*"+rollData.roll.diceBonus+")";
         }
-        else {
+        else 
           rollData.formula="((("+rollData.roll.dice+"/100*"+rollData.roll.abilitymod+")+"+rollData.roll.abilitymod+")*"+rollData.roll.diceBonus+")";
-        }
+
         this.actor.system[rollData.roll.resource].value = this.actor.system[rollData.roll.resource].value - rollData.roll.cost;
         this.update();
         this.actor.sheet._render();

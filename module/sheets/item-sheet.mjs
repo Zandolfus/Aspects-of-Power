@@ -31,7 +31,7 @@ export class AspectsofPowerItemSheet extends ItemSheet {
     // return `${path}/item-sheet.hbs`;
 
     // Alternatively, you could use the following return statement to do a
-    // unique item sheet by type, like `weapon-sheet.hbs`.
+    // unique item sheet by type, like `-sheet.hbs`.
     return `${path}/item-${this.item.type}-sheet.hbs`;
   }
 
