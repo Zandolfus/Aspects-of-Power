@@ -43,6 +43,7 @@ export class AspectsofPowerItem extends Item {
    */
   async roll() {
     const item = this;
+    const rollData = this.getRollData();
 
     // Initialize chat data.
     const speaker = ChatMessage.getSpeaker({ actor: this.actor });
@@ -58,6 +59,45 @@ export class AspectsofPowerItem extends Item {
         content: item.system.description ?? '',
       });
     }
+    else if(!rollData.roll.dice) {
+      ChatMessage.create({
+        speaker: speaker,
+        rollMode: rollMode,
+        flavor: label,
+        content: item.system.description ?? '',
+      });
+      rollData.roll.abilitymod=this.actor.system.abilities[rollData.roll.abilities].mod;
+      rollData.roll.resourcevalue=this.actor.system[rollData.roll.resource].value;
+      if (rollData.roll.resourcevalue >= rollData.roll.cost) {
+        if (rollData.roll.type == "weapon"){
+          rollData.formula="((((d20/100)*("+this.actor.system.abilities.dexterity.mod+"+"+this.actor.system.abilities.strength.mod+"*(6/10)))+"+this.actor.system.abilities.dexterity.mod+"+"+this.actor.system.abilities.strength.mod+"*(6/10)))*(911/1000)";
+          const roll = new Roll(rollData.formula, rollData);
+          roll.toMessage({
+            speaker: speaker,
+            rollMode: rollMode,
+            flavor: "To Hit",
+          });
+          rollData.formula="((("+rollData.roll.dice+"/50*"+rollData.roll.abilitymod+")+"+rollData.roll.abilitymod+"/1.25"+")*"+rollData.roll.diceBonus+")";
+        }
+        else 
+          rollData.formula="(((1d20/100*"+rollData.roll.abilitymod+")+"+rollData.roll.abilitymod+")*"+rollData.roll.diceBonus+")";
+
+        this.actor.system[rollData.roll.resource].value = this.actor.system[rollData.roll.resource].value - rollData.roll.cost;
+        this.update();
+        this.actor.sheet._render();
+        // Invoke the roll and submit it to chat.
+        const roll = new Roll(rollData.formula, rollData);
+        // If you need to store the value first, uncomment the next line.
+        const result = await roll.evaluate();
+        roll.toMessage({
+          speaker: speaker,
+          rollMode: rollMode,
+          flavor: label,
+        });
+        return roll;
+
+       }
+      }
     // Otherwise, create a roll and send a chat message from it.
     else {
       // Retrieve roll data.
@@ -77,7 +117,7 @@ export class AspectsofPowerItem extends Item {
 
       if (rollData.roll.resourcevalue >= rollData.roll.cost) {
         if (rollData.roll.type == "weapon"){
-          rollData.formula="((((d20/100)*("+this.actor.system.abilities.dexterity.mod+"+"+this.actor.system.abilities.strength.mod+"*(3/10)))+"+this.actor.system.abilities.dexterity.mod+"+"+this.actor.system.abilities.strength.mod+"*(3/10)))*(911/1000)";
+          rollData.formula="((((d20/100)*("+this.actor.system.abilities.dexterity.mod+"+"+this.actor.system.abilities.strength.mod+"*(6/10)))+"+this.actor.system.abilities.dexterity.mod+"+"+this.actor.system.abilities.strength.mod+"*(6/10)))*(911/1000)";
           const roll = new Roll(rollData.formula, rollData);
           roll.toMessage({
             speaker: speaker,
