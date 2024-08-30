@@ -9,19 +9,49 @@ from typing import Dict, List, Optional
 
 class Character:
     STATS = ['vitality', 'endurance', 'strength', 'dexterity', 'toughness', 'intelligence', 'willpower', 'wisdom', 'perception']
-    META  = ['Class', 'Class level', 'Race', 'Race level', 'Profession', 'Profession level', 'Race rank', 'Free points']
+    META  = ['Class', 'Class level', 'Race', 'Race level', 'Race rank', 'Profession', 'Profession level']
 
-    def __init__(self, name: str, stats: Optional[Dict[str, int]] = None, meta: Optional[Dict[str, str]] = None, finesse: bool = False):
+    def __init__(self, name: str, stats: Optional[Dict[str, int]] = None, meta: Optional[Dict[str, str]] = None, finesse: bool = False, free_points: int = 0):
         self.name = name
         self.stats = stats or {stat: 0 for stat in self.STATS}
-        self.meta = meta or {info: '0' if 'level' in info.lower() or info == 'Free points' else '' for info in self.META}
+        self.meta = meta or {info: '' for info in self.META}
         self.modifiers = self.calculate_modifiers()
         self.max_health = self.modifiers['vitality']
         self.current_health = self.max_health
         self.finesse = finesse or self.meta['Class'].lower() == 'light warrior'
+        self.free_points = free_points
 
     def calculate_modifiers(self) -> Dict[str, float]:
         return {stat: self.calculate_modifier(value) for stat, value in self.stats.items()}
+
+    def _calculate_initial_free_points(self) -> int:
+        class_level = int(self.meta['Class level'])
+        profession_level = int(self.meta['Profession level'])
+        total_level = (class_level + profession_level) // 2
+        race = self.meta['Race'].lower()
+
+        free_points = 0
+
+        # Class free points
+        free_points += min(class_level, 24) * 2  # 2 points per level up to 24
+        free_points += max(0, class_level - 24) * 4  # 4 points per level from 25 onward
+
+        # Profession free points
+        profession = self.meta['Profession'].lower()
+        free_points += profession_level * (8 if profession == 'justiciar' else 2)
+
+        # Race free points
+        for level in range(1, total_level+1):
+            if 0 <= level <= 9:
+                free_points += 1
+            elif 10 <= level <= 24:
+                free_points += 2
+            elif 25 <= level <= 99:
+                free_points += 5
+            else:
+                free_points += 15
+
+        return free_points
 
     @staticmethod
     def calculate_modifier(attribute: int) -> float:
@@ -87,17 +117,14 @@ class Character:
             for row in reader:
                 if row['name'].lower() == character_name.lower():
                     name = row.pop('name')
-                    stats = {stat: int(value) for stat, value in row.items() if stat in cls.STATS}
-                    meta = {info: value for info, value in row.items() if info in cls.META}
-                    character = cls(name, stats, meta)
-                    
-                    free_points = int(meta.get('Free points', '0'))
+                    stats = {stat: int(row[stat]) for stat in cls.STATS}
+                    meta = {info: row[info] for info in cls.META}
+                    free_points = int(row['free_points'])
+                    character = cls(name, stats, meta, free_points=free_points)
                     if free_points > 0:
-                        print(f"{name} has {free_points} unallocated free points.")
-                        character._allocate_free_points()
-                    
+                        print(f"Loaded character {name} has {free_points} unallocated free points.")
                     return character
-        print(f'Character {character_name} not found in the CSV file.')
+        print(f"Character {character_name} not found in the CSV file.")
         return None
     
     def add_stats(self) -> None:
@@ -253,22 +280,38 @@ class Character:
                 
         return hit, damage, net_dmg
     
-    def level_up(self, level_type: str):
+    def level_up(self, level_type: str, target_level: int):
         if level_type.lower() not in ['class', 'profession']:
             raise ValueError("Invalid level type. Must be 'Class' or 'Profession'.")
 
         current_level = int(self.meta[f'{level_type} level'])
-        self.meta[f'{level_type} level'] = str(current_level + 1)
+        if target_level <= current_level:
+            print(f"{self.name} is already at or above level {target_level} for {level_type}.")
+            return
 
-        if level_type.lower() == 'class':
-            self._apply_class_level_up()
-        elif level_type.lower() == 'profession':
-            self._apply_profession_level_up()
+        for _ in range(current_level, target_level):
+            self.meta[f'{level_type} level'] = str(current_level + 1)
+            current_level += 1
+
+            if level_type == 'Class':
+                self._apply_class_level_up(current_level)
+            elif level_type == 'Profession':
+                self._apply_profession_level_up()
 
         self._update_race_level()
         self.modifiers = self.calculate_modifiers()
         self.max_health = self.modifiers['vitality']
         self.current_health = self.max_health
+        self.free_points = self._calculate_initial_free_points()
+        
+    def _update_race_level(self):
+        total_level = int(self.meta['Class level']) + int(self.meta['Profession level'])
+        current_race_level = int(self.meta['Race level'])
+        new_race_level = total_level // 2
+
+        if new_race_level > current_race_level:
+            self.meta['Race level'] = str(new_race_level)
+            self._apply_race_level_up(new_race_level - current_race_level)
 
     def _apply_class_level_up(self, current_level):
         class_name = self.meta['Class'].lower()
@@ -284,55 +327,35 @@ class Character:
         if current_level <= 24:
             for stat, gain in class_stat_gains[class_name].items():
                 self.stats[stat] += gain
-            self.free_points += 2
         else:
             if class_name == 'light warrior':
                 self.stats['dexterity'] += 5
                 self.stats['endurance'] += 2
                 self.stats['vitality'] += 3
                 self.stats['strength'] += 4
-            self.free_points += 4
-            
-    def _update_race_level(self):
-        total_level = int(self.meta['Class level']) + int(self.meta['Profession level'])
-        current_race_level = int(self.meta['Race level'])
-        new_race_level = total_level // 2
-
-        if new_race_level > current_race_level:
-            self.meta['Race level'] = str(new_race_level)
-            self._apply_race_level_up(new_race_level - current_race_level)
 
     def _apply_race_level_up(self, levels):
         race = self.meta['Race'].lower()
-        total_level = int(self.meta['Class level']) + int(self.meta['Profession level'])
 
-        for _ in range(levels):
+        for level in range(1, levels+1):
             if race == 'human':
-                for stat in self.STATS:
-                    self.stats[stat] += 1
 
-            if 0 <= total_level <= 9:
-                self.meta['Race rank'] = 'G'
-                bonus = 1
-                free_points = 1
-            elif 10 <= total_level <= 24:
-                self.meta['Race rank'] = 'F'
-                bonus = 1
-                free_points = 2
-            elif 25 <= total_level <= 99:
-                self.meta['Race rank'] = 'E'
-                bonus = 2
-                free_points = 5
-            else:  # 100+
-                self.meta['Race rank'] = 'D'
-                bonus = 6
-                free_points = 15
+                if 0 <= level <= 9:
+                    self.meta['Race rank'] = 'G'
+                    bonus = 1
+                elif 10 <= level <= 24:
+                    self.meta['Race rank'] = 'F'
+                    bonus = 1
+                elif 25 <= level <= 99:
+                    self.meta['Race rank'] = 'E'
+                    bonus = 2
+                else:
+                    self.meta['Race rank'] = 'D'
+                    bonus = 6
 
             for stat in self.STATS:
                 self.stats[stat] += bonus
-
-            self.meta['Free points'] = str(int(self.meta['Free points']) + free_points)
-
+    
     def _apply_profession_level_up(self):
         profession = self.meta['Profession'].lower()
 
@@ -346,26 +369,24 @@ class Character:
             for stat, gain in profession_stat_gains[profession].items():
                 self.stats[stat] += gain
 
-        self.free_points += 8 if profession == 'justiciar' else 2
-
-    def _allocate_free_points(self):
-        points = int(self.meta['Free points'])
-        if points == 0:
+    def allocate_free_points(self):
+        if self.free_points == 0:
             print("No free points available to allocate.")
             return
 
-        print(f"\nYou have {points} free points to allocate.")
-        allocate = input("Do you want to allocate these points now? (yes/no/random): ").lower()
+        print(f"\nYou have {self.free_points} free points to allocate.")
+        allocation_choice = input("Do you want to allocate these points now? (yes/no/random): ").lower()
 
-        if allocate == 'yes':
-            self._manual_allocation(points)
-        elif allocate == 'random':
-            self._random_allocation(points)
+        if allocation_choice == 'yes':
+            self._manual_allocation()
+        elif allocation_choice == 'random':
+            self._random_allocation()
         else:
             print("Free points saved for later allocation.")
 
-    def _manual_allocation(self, points):
-        remaining_points = points
+    def _manual_allocation(self):
+        remaining_points = self.free_points
+
         while remaining_points > 0:
             print(f"\nRemaining points: {remaining_points}")
             stat = input("Enter the stat you want to increase (or 'done' to finish): ").lower()
@@ -391,7 +412,9 @@ class Character:
             else:
                 print("Invalid stat. Please choose from:", ", ".join(self.STATS))
 
-        self.meta['Free points'] = str(remaining_points)
+        self.free_points = remaining_points
+        if remaining_points > 0:
+            print(f"{remaining_points} points were left unallocated and saved for later.")
 
     def _random_allocation(self):
         print("Randomly allocating free points...")
@@ -399,7 +422,7 @@ class Character:
             stat = random.choice(self.STATS)
             self.stats[stat] += 1
         print("All free points have been randomly allocated.")
-        self.meta['Free points'] = '0'
+        self.free_points = 0
                 
     def __str__(self) -> str:
         meta_str = ', '.join(f'{meta}: {value}' for meta, value in self.meta.items())
@@ -409,17 +432,15 @@ class Character:
 class Simulator:
     @staticmethod
     def simulate_leveling(character: Character, levels: Dict[str, int]):
-        for level_type, level_count in levels.items():
-            print(f"\nSimulating {level_count} {level_type} level-ups for {character.name}")
-            for _ in range(level_count):
-                character.level_up(level_type)
-                print(f"{level_type} level: {character.meta[f'{level_type} level']}")
-                print(f"Race level: {character.meta['Race level']}, Rank: {character.meta['Race rank']}")
+        for level_type, target_level in levels.items():
+            print(f"\nSimulating {level_type} level-up for {character.name} to level {target_level}")
+            character.level_up(level_type, target_level)
+            print(f"{level_type} level: {character.meta[f'{level_type} level']}")
 
-        character._allocate_free_points()
-        print("\nFinal character stats:")
+        print("\nLeveling complete. Current character stats:")
         print(character)
         
+        character.allocate_free_points()
 
 if __name__ == '__main__':
     char = Character("Test Character", 
@@ -428,7 +449,10 @@ if __name__ == '__main__':
                            "Profession": "Justiciar", "Profession level": "0"},
                      stats={'vitality': 7, 'endurance': 8, 'strength': 7, 'dexterity': 9,
                               'intelligence': 10, 'willpower': 10, 'wisdom': 10, 'perception': 8, 'toughness': 5})
-    char = Character.load_character('characters2.csv', 'Gabe')
+    char.level_up('Class', 28)
+    char.level_up('Profession', 2)
+    char.to_csv('characters3.csv', mode='w')
+    char = Character.load_character('characters3.csv', 'Test Character')
     char.to_csv('characters2.csv', mode='a')
     char1 = Character.from_manual_input('Balanced_warrior')
     print(char1)
