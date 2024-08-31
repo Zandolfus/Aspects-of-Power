@@ -193,7 +193,8 @@ class Character:
         
         existing_data = []
         character_exists = False
-        if os.path.exists(filename):
+        file_exists = os.path.exists(filename)
+        if file_exists:
             with open(filename, 'r', newline='') as file:
                 reader = csv.DictReader(file)
                 for row in reader:
@@ -202,7 +203,7 @@ class Character:
                     else:
                         existing_data.append(row)
 
-        write_mode = 'w' if character_exists or mode == 'w' else 'a'
+        write_mode = 'w' if character_exists or not file_exists or mode == 'w' else 'a'
         with open(filename, write_mode, newline='') as file:
             writer = csv.DictWriter(file, fieldnames=fieldnames)
             if write_mode == 'w':
