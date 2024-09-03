@@ -28,7 +28,6 @@ class Character:
         class_level = int(self.meta['Class level'])
         profession_level = int(self.meta['Profession level'])
         total_level = (class_level + profession_level) // 2
-        race = self.meta['Race'].lower()
 
         free_points = 0
 
@@ -50,6 +49,32 @@ class Character:
                 free_points += 5
             else:
                 free_points += 15
+
+        return free_points
+    
+    def _calculate_free_points(self, target_level: int, level_type: str) -> int:
+        current_level = int(self.meta[f'{level_type} level'.capitalize()])
+        professions = ['justiciar', 'judge']
+        free_points = 0
+
+        for level in range(current_level + 1, target_level + 1):
+            if level_type == 'Class':
+                if level <= 24:
+                    free_points += 2
+                else:
+                    free_points += 4
+            elif level_type == 'Profession':
+                profession = self.meta['Profession'].lower()
+                free_points += 8 if profession in professions else 2
+            elif level_type == 'Race':
+                if 0 <= level <= 9:
+                    free_points += 1
+                elif 10 <= level <= 24:
+                    free_points += 2
+                elif 25 <= level <= 99:
+                    free_points += 5
+                else:
+                    free_points += 15
 
         return free_points
 
@@ -289,6 +314,8 @@ class Character:
         if target_level <= current_level:
             print(f"{self.name} is already at or above level {target_level} for {level_type}.")
             return
+        
+        self.free_points += self._calculate_free_points(target_level, level_type)
 
         for _ in range(current_level, target_level):
             self.meta[f'{level_type} level'] = str(current_level + 1)
@@ -303,7 +330,6 @@ class Character:
         self.modifiers = self.calculate_modifiers()
         self.max_health = self.modifiers['vitality']
         self.current_health = self.max_health
-        self.free_points = self._calculate_initial_free_points()
         
     def _update_race_level(self):
         total_level = int(self.meta['Class level']) + int(self.meta['Profession level'])
@@ -311,6 +337,7 @@ class Character:
         new_race_level = total_level // 2
 
         if new_race_level > current_race_level:
+            self.free_points += self._calculate_free_points(new_race_level, 'Race')
             self.meta['Race level'] = str(new_race_level)
             self._apply_race_level_up(new_race_level - current_race_level)
 
@@ -444,7 +471,7 @@ class Simulator:
         character.allocate_free_points()
 
 if __name__ == '__main__':
-    char = Character("Test Character", 
+    char = Character("Fei", 
                      meta={"Class": "Light Warrior", "Class level": "0", 
                            "Race": "Human", "Race level": "0", "Race rank": "G",
                            "Profession": "Justiciar", "Profession level": "0"},
@@ -452,21 +479,5 @@ if __name__ == '__main__':
                               'intelligence': 10, 'willpower': 10, 'wisdom': 10, 'perception': 8, 'toughness': 5})
     char.level_up('Class', 28)
     char.level_up('Profession', 2)
-    char.to_csv('characters3.csv', mode='w')
-    char = Character.load_character('characters3.csv', 'Test Character')
-    char.to_csv('characters2.csv', mode='a')
-    char1 = Character.from_manual_input('Balanced_warrior')
-    print(char1)
-    char1.create_character_sheet()
-
-    char1.to_csv('characters2.csv', mode='w')
-
-    char2 = Character('Bob', {'vitality': 10, 'endurance': 8, 'strength': 12, 'dexterity': 14,
-                              'intelligence': 13, 'willpower': 11, 'wisdom': 10, 'perception': 9})
-    char2.to_csv('characters.csv', mode='a')
-    char2.create_character_sheet()
-
-    loaded_characters = Character.from_csv('characters.csv')
-    for char in loaded_characters:
-        print(char)
-        char.create_character_sheet()
+    char.allocate_free_points()
+    char.to_csv('characters4.csv', mode='w')
