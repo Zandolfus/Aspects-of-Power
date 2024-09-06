@@ -6,6 +6,7 @@ from random import randint
 from typing import Dict, List, Optional
 
 # Create seperate functions for the addition of stats and meta info to allow the user to create chars without of them or to not let users create one without the other.
+# Handle class chnage from tier 1 to tier 2. When the character levels up to 25, prompt user to change class. Base class vs tier x class.
 
 class Character:
     STATS = ['vitality', 'endurance', 'strength', 'dexterity', 'toughness', 'intelligence', 'willpower', 'wisdom', 'perception']
@@ -54,7 +55,8 @@ class Character:
     
     def _calculate_free_points(self, target_level: int, level_type: str) -> int:
         current_level = int(self.meta[f'{level_type} level'.capitalize()])
-        professions = ['justiciar', 'judge']
+        professions = ['justiciar', 'judge', 'augur']
+        race = self.meta['Race']
         free_points = 0
 
         for level in range(current_level + 1, target_level + 1):
@@ -67,14 +69,20 @@ class Character:
                 profession = self.meta['Profession'].lower()
                 free_points += 8 if profession in professions else 2
             elif level_type == 'Race':
-                if 0 <= level <= 9:
-                    free_points += 1
-                elif 10 <= level <= 24:
-                    free_points += 2
-                elif 25 <= level <= 99:
-                    free_points += 5
-                else:
-                    free_points += 15
+                if race.lower() == 'human':
+                    if 0 <= level <= 9:
+                        free_points += 1
+                    elif 10 <= level <= 24:
+                        free_points += 2
+                    elif 25 <= level <= 99:
+                        free_points += 5
+                    else:
+                        free_points += 15
+                elif race.lower() == 'half-asrai':
+                    if 0 <= level <= 9:
+                        free_points += 2
+                    elif 10 <= level <= 24:
+                        free_points += 4
 
         return free_points
 
@@ -314,19 +322,18 @@ class Character:
         if target_level <= current_level:
             print(f"{self.name} is already at or above level {target_level} for {level_type}.")
             return
-        
-        self.free_points += self._calculate_free_points(target_level, level_type)
 
         for _ in range(current_level, target_level):
-            self.meta[f'{level_type} level'] = str(current_level + 1)
             current_level += 1
+            self.meta[f'{level_type} level'] = str(current_level)
 
             if level_type == 'Class':
                 self._apply_class_level_up(current_level)
             elif level_type == 'Profession':
-                self._apply_profession_level_up()
+                self._apply_profession_level_up(current_level)
 
-        self._update_race_level()
+            self._update_race_level()
+        
         self.modifiers = self.calculate_modifiers()
         self.max_health = self.modifiers['vitality']
         self.current_health = self.max_health
@@ -337,65 +344,136 @@ class Character:
         new_race_level = total_level // 2
 
         if new_race_level > current_race_level:
-            self.free_points += self._calculate_free_points(new_race_level, 'Race')
+            for level in range(current_race_level + 1, new_race_level + 1):
+                self._apply_race_level_up(level)
             self.meta['Race level'] = str(new_race_level)
-            self._apply_race_level_up(new_race_level - current_race_level)
 
     def _apply_class_level_up(self, current_level):
+        if current_level == 25:
+            self.meta['Class'] = input('Enter your new class: ')
+        
         class_name = self.meta['Class'].lower()
-        class_stat_gains = {
-            'mage': {'intelligence': 2, 'willpower': 2, 'wisdom': 1, 'perception': 1},
-            'healer': {'willpower': 2, 'wisdom': 2, 'intelligence': 1, 'perception': 1},
-            'archer': {'perception': 2, 'dexterity': 2, 'endurance': 1, 'vitality': 1},
-            'heavy warrior': {'strength': 2, 'vitality': 2, 'endurance': 1, 'toughness': 1},
-            'medium warrior': {'strength': 2, 'dexterity': 2, 'endurance': 1, 'vitality': 1},
-            'light warrior': {'dexterity': 2, 'endurance': 2, 'vitality': 1, 'strength': 1}
+        
+        tier1_class_gains = {
+            'mage': {'intelligence': 2, 'willpower': 2, 'wisdom': 1, 'perception': 1, 'free_points': 2},
+            'healer': {'willpower': 2, 'wisdom': 2, 'intelligence': 1, 'perception': 1, 'free_points': 2},
+            'archer': {'perception': 2, 'dexterity': 2, 'endurance': 1, 'vitality': 1, 'free_points': 2},
+            'heavy warrior': {'strength': 2, 'vitality': 2, 'endurance': 1, 'toughness': 1, 'free_points': 2},
+            'medium warrior': {'strength': 2, 'dexterity': 2, 'endurance': 1, 'vitality': 1, 'free_points': 2},
+            'light warrior': {'dexterity': 2, 'endurance': 2, 'vitality': 1, 'strength': 1, 'free_points': 2},
         }
-
+        
+        tier2_class_gains = {
+            '''thunder puppet's shadow''': {'dexterity': 5, 'strength': 4, 'vitality': 3, 'endurance': 2, 'free_points': 4},
+            'glamourweaver': {'wisdom': 5, 'intelligence': 4, 'willpower': 3, 'toughness': 2, 'free_points': 4},
+            'waywatcher': {'perception': 5, 'dexterity': 4, 'wisdom': 3, 'toughness': 2, 'free_points': 4},
+            'glade guardian': {'dexterity': 5, 'strength': 4, 'toughness': 3, 'wisdom': 2, 'free_points': 4},
+            'sniper': {'perception': 5, 'dexterity': 4, 'endurance': 3, 'toughness': 2, 'free_points': 4},
+            'augur': {'wisdom': 8, 'willpower': 8, 'vitality': 8, 'free_points': 8}
+        }
+        
         if current_level <= 24:
-            for stat, gain in class_stat_gains[class_name].items():
-                self.stats[stat] += gain
+            for stat, gain in tier1_class_gains[class_name].items():
+                if stat != 'free_points':
+                    self.stats[stat] += gain
+                else:
+                    self.free_points += gain
         else:
-            if class_name == 'light warrior':
-                self.stats['dexterity'] += 5
-                self.stats['endurance'] += 2
-                self.stats['vitality'] += 3
-                self.stats['strength'] += 4
+            for stat, gain in tier2_class_gains[class_name].items():
+                if stat != 'free_points':
+                    self.stats[stat] += gain
+                else:
+                    self.free_points += gain
 
-    def _apply_race_level_up(self, levels):
+    def _apply_race_level_up(self, level):
         race = self.meta['Race'].lower()
 
-        for level in range(1, levels+1):
-            if race == 'human':
-
-                if 0 <= level <= 9:
-                    self.meta['Race rank'] = 'G'
-                    bonus = 1
-                elif 10 <= level <= 24:
-                    self.meta['Race rank'] = 'F'
-                    bonus = 1
-                elif 25 <= level <= 99:
-                    self.meta['Race rank'] = 'E'
-                    bonus = 2
-                else:
-                    self.meta['Race rank'] = 'D'
-                    bonus = 6
+        if race == 'human':
+            if 0 <= level <= 9:
+                self.meta['Race rank'] = 'G'
+                bonus = 1
+                self.free_points += 1
+            elif 10 <= level <= 24:
+                self.meta['Race rank'] = 'F'
+                bonus = 1
+                self.free_points += 2
+            elif 25 <= level <= 99:
+                self.meta['Race rank'] = 'E'
+                bonus = 2
+                self.free_points += 5
+            else:
+                self.meta['Race rank'] = 'D'
+                bonus = 6
+                self.free_points += 15
 
             for stat in self.STATS:
                 self.stats[stat] += bonus
+                
+        elif race == 'half-asrai':
+            if 0 <= level <= 9:
+                self.meta['Race rank'] = 'G'
+                dex = 2
+                wis = 2
+                tough = 2
+                per = 2
+                self.free_points += 2
+            elif 10 <= level <= 24:
+                self.meta['Race rank'] = 'F'
+                dex = 2
+                wis = 2
+                tough = 2
+                per = 2
+                self.free_points += 3
+                
+            race_stats = {'dexterity': dex, 'wisdom': wis, 'toughness': tough, 'perception': per}
+            for stat, value in race_stats.items():
+                self.stats[stat] += value
     
-    def _apply_profession_level_up(self):
+    def _apply_profession_level_up(self, current_level):
+        if current_level == 25:
+            self.meta['Profession'] = input('Enter your new profession: ')
+        
         profession = self.meta['Profession'].lower()
 
-        profession_stat_gains = {
-            'beginner jeweler of the elements': {'wisdom': 2, 'dexterity': 2, 'vitality': 1, 'perception': 1},
-            'beginner smith of the moonshadow': {'strength': 2, 'perception': 2, 'vitality': 1, 'intelligence': 1},
-            'justiciar': {}
+        tier1_profession_gains = {
+            'beginner jeweler of the elements': {'wisdom': 2, 'dexterity': 2, 'vitality': 1, 'perception': 1, 'free_points': 2},
+            'beginner smith of the moonshadow': {'strength': 2, 'perception': 2, 'vitality': 1, 'intelligence': 1, 'free_points': 2},
+            'justiciar': {'free_points': 8},
+            'judge': {'free_points': 8},
+            'gatherer': {'strength': 2, 'perception': 2, 'dexterity': 1, 'endurance': 1, 'free_points': 2},
+            'chef': {'dexterity': 2, 'perception': 2, 'strength': 1, 'endurance': 1, 'free_points': 2},
+            'student trapper of the asrai': {'perception': 2, 'dexterity': 2, 'vitality': 1, 'endurance': 1, 'free_points': 2},
+            'pickpocket': {'perception': 2, 'dexterity': 2, 'strength': 1, 'endurance': 1, 'free_points': 2},
+            'novice tailor': {'dexterity': 2, 'perception': 2, 'wisdom': 1, 'willpower': 1, 'free_points': 2}
+            
         }
 
-        if profession in profession_stat_gains:
-            for stat, gain in profession_stat_gains[profession].items():
-                self.stats[stat] += gain
+        tier2_profession_gains = {
+            'crusher': {'strength': 8, 'dexterity': 4, 'endurance': 4, 'free_points': 2},
+            'chef for the masses': {'perception': 5, 'dexterity': 4, 'strength': 3, 'endurance': 2, 'free_points': 4},
+            'beginner trapper of the asrai': {'perception': 5, 'dexterity': 4, 'vitality': 3, 'endurance': 2, 'free_points': 4},
+            'thief': {'dexterity': 5, 'perception': 4, 'endruance': 3, 'strength': 2, 'free_points': 4},
+            'tailor of ingenuity': {'dexterity': 5, 'perception': 4, 'wisdom': 3, 'willpower': 2, 'free_points': 4}
+        }
+        
+        if current_level <= 24:
+            if profession in tier1_profession_gains:
+                for stat, gain in tier1_profession_gains[profession].items():
+                    if stat != 'free_points':
+                        self.stats[stat] += gain
+                    else:
+                        self.free_points += gain
+            else:
+                print('This profession does not exist!')
+        else:
+            if profession in tier2_profession_gains:
+                for stat, gain in tier2_profession_gains[profession].items():
+                    if stat != 'free_points':
+                        self.stats[stat] += gain
+                    else:
+                        self.free_points += gain
+            else:
+                print('This profession does not exist!')
 
     def allocate_free_points(self):
         if self.free_points == 0:
@@ -411,6 +489,8 @@ class Character:
             self._random_allocation()
         else:
             print("Free points saved for later allocation.")
+        
+        self.modifiers = self.calculate_modifiers()
 
     def _manual_allocation(self):
         remaining_points = self.free_points
@@ -471,13 +551,37 @@ class Simulator:
         character.allocate_free_points()
 
 if __name__ == '__main__':
-    char = Character("Fei", 
-                     meta={"Class": "Light Warrior", "Class level": "0", 
+    char = Character("Frida", 
+                     meta={"Class": "Archer", "Class level": "0", 
                            "Race": "Human", "Race level": "0", "Race rank": "G",
-                           "Profession": "Justiciar", "Profession level": "0"},
-                     stats={'vitality': 7, 'endurance': 8, 'strength': 7, 'dexterity': 9,
-                              'intelligence': 10, 'willpower': 10, 'wisdom': 10, 'perception': 8, 'toughness': 5})
+                           "Profession": "Student Trapper of the Asrai", "Profession level": "0"},
+                     stats={'vitality': 5, 'endurance': 5, 'strength': 5, 'dexterity': 5,
+                              'intelligence': 5, 'willpower': 5, 'wisdom': 5, 'perception': 5, 'toughness': 5})
+    char = Character.load_character('all_chars.csv', 'Felicia')
     char.level_up('Class', 28)
-    char.level_up('Profession', 2)
+    char.level_up('Profession', 10)
+    # char.update_meta('Race', 'Half-Asrai')
+    # char.level_up('Class', 26)
     char.allocate_free_points()
-    char.to_csv('characters4.csv', mode='w')
+    char.to_csv('all_chars.csv')
+    # char = Character.load_character('Fei.csv', 'Fei')
+    # char.update_meta('Race', 'Half-Asrai')
+    # char.update_meta('Profession', 'Uninitiated')
+    # char.level_up('Class', 26)
+    # char.allocate_free_points()
+    # char.to_csv('Fei.csv')
+    # char1 = Character.from_manual_input('Balanced_warrior')
+    # print(char1)
+    # char1.create_character_sheet()
+
+    # char1.to_csv('characters2.csv', mode='w')
+
+    # char2 = Character('Bob', {'vitality': 10, 'endurance': 8, 'strength': 12, 'dexterity': 14,
+    #                           'intelligence': 13, 'willpower': 11, 'wisdom': 10, 'perception': 9})
+    # char2.to_csv('characters.csv', mode='a')
+    # char2.create_character_sheet()
+
+    # loaded_characters = Character.from_csv('characters.csv')
+    # for char in loaded_characters:
+    #     print(char)
+    #     char.create_character_sheet()

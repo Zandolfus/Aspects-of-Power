@@ -1,0 +1,8 @@
+name,Class,Class level,Race,Race level,Race rank,Profession,Profession level,vitality,endurance,strength,dexterity,toughness,intelligence,willpower,wisdom,perception,vitality_modifier,endurance_modifier,strength_modifier,dexterity_modifier,toughness_modifier,intelligence_modifier,willpower_modifier,wisdom_modifier,perception_modifier,free_points
+Felicia,Archer,24,Human,12,F,Judge,1,41,41,17,65,17,17,55,17,98,58,58,24,93,24,24,24,24,93,0
+Valentine,Mage,21,Human,10,F,Uninitiated,0,23,15,15,15,23,78,73,36,36,21,21,21,21,21,81,81,51,51,0
+Aiden,Mage,21,Human,10,F,Uninitiated,0,15,15,15,28,35,77,57,36,36,21,21,21,21,21,81,81,51,51,0
+Bruce,Heavy Warrior,10,Human,17,F,Crusher,25,42,100,138,50,47,22,22,22,70,60,143,198,71,67,31,31,31,100,0
+Phil,Glade Guardian,26,Half-Asrai,13,F,Uninitiated,0,65,41,103,59,63,17,17,23,19,93,58,147,84,90,24,24,33,27,0
+Fei,Glamourweaver,26,Half-Asrai,13,F,Uninitiated,0,29,24,17,19,23,49,96,107,43,41,34,24,27,33,70,137,153,61,0
+Frida,Waywatcher,28,Human,19,F,Student Trapper of the Asrai,10,67,67,24,138,52,24,24,36,157,95,95,34,198,74,34,34,51,225,0
