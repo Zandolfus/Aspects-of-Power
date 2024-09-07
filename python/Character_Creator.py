@@ -444,7 +444,8 @@ class Character:
             'chef': {'dexterity': 2, 'perception': 2, 'strength': 1, 'endurance': 1, 'free_points': 2},
             'student trapper of the asrai': {'perception': 2, 'dexterity': 2, 'vitality': 1, 'endurance': 1, 'free_points': 2},
             'pickpocket': {'perception': 2, 'dexterity': 2, 'strength': 1, 'endurance': 1, 'free_points': 2},
-            'novice tailor': {'dexterity': 2, 'perception': 2, 'wisdom': 1, 'willpower': 1, 'free_points': 2}
+            'novice tailor': {'dexterity': 2, 'perception': 2, 'wisdom': 1, 'willpower': 1, 'free_points': 2},
+            'builder': {'strength': 2, 'dexterity': 2, 'endurance': 1, 'intelligence': 1, 'free_points': 2}
             
         }
 
@@ -551,15 +552,15 @@ class Simulator:
         character.allocate_free_points()
 
 if __name__ == '__main__':
-    char = Character("Frida", 
+    char = Character("Woody", 
                      meta={"Class": "Archer", "Class level": "0", 
                            "Race": "Human", "Race level": "0", "Race rank": "G",
-                           "Profession": "Student Trapper of the Asrai", "Profession level": "0"},
+                           "Profession": "Uninitiated", "Profession level": "0"},
                      stats={'vitality': 5, 'endurance': 5, 'strength': 5, 'dexterity': 5,
                               'intelligence': 5, 'willpower': 5, 'wisdom': 5, 'perception': 5, 'toughness': 5})
-    char = Character.load_character('all_chars.csv', 'Felicia')
-    char.level_up('Class', 28)
-    char.level_up('Profession', 10)
+    # char = Character.load_character('all_chars.csv', 'Felicia')
+    char.level_up('Class', 20)
+    # char.level_up('Profession', 15)
     # char.update_meta('Race', 'Half-Asrai')
     # char.level_up('Class', 26)
     char.allocate_free_points()
