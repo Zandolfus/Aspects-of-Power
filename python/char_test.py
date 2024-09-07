@@ -20,6 +20,7 @@ def print_menu(character: Character):
         print("6. Save character to CSV")
         print("7. Create character sheet")
         print("8. Allocate free points")
+        print("9. Start Over")
         print("0. Exit")
 
 def create_character():
@@ -170,6 +171,8 @@ def main():
                     create_sheet(character)
                 case '8':
                     allocate_points(character)
+                case '9':
+                    character = None
                 case '0':
                     print("Thank you for using the Character Creator Tester!")
                     break
