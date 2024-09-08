@@ -5,13 +5,14 @@ def clear_screen():
     os.system('cls' if os.name == 'nt' else 'clear')
 
 def print_menu(character: Character):
-    print("\nCharacter Creator Tester")
+    print("Character Creator Tester\n")
     
     if character is None:
         print("1. Create a new character")
         print("2. Load a character")
         print("0. Exit")
     else:
+        print('\x1B[4m' + fr'Welcome {character.name}!' + '\x1B[0m' + '\n')
         print("1. View character details")
         print("2. Update character stats")
         print("3. Update character meta information")
@@ -140,7 +141,7 @@ def main():
     while True:
         clear_screen()
         print_menu(character)
-        choice = input("Enter your choice: ")
+        choice = input("\nEnter your choice: ")
         
         if character is None:
             match choice:
@@ -156,20 +157,28 @@ def main():
         else:
             match choice:
                 case '1':
+                    clear_screen()
                     view_character(character)
                 case '2':
+                    clear_screen()
                     update_stats(character)
                 case '3':
+                    clear_screen()
                     update_meta(character)
                 case '4':
+                    clear_screen()
                     level_up(character)
                 case '5':
+                    clear_screen() 
                     simulate_combat(character)
                 case '6':
+                    clear_screen()
                     save_character(character)
                 case '7':
+                    clear_screen()
                     create_sheet(character)
                 case '8':
+                    clear_screen()
                     allocate_points(character)
                 case '9':
                     character = None
@@ -179,7 +188,8 @@ def main():
                 case _:
                     print("Invalid choice. Please try again.")
         
-        input("\nPress Enter to continue...")
+        print()
+        os.system('pause')
 
 if __name__ == "__main__":
     main()
