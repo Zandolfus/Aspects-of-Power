@@ -369,7 +369,8 @@ class Character:
             'waywatcher': {'perception': 5, 'dexterity': 4, 'wisdom': 3, 'toughness': 2, 'free_points': 4},
             'glade guardian': {'dexterity': 5, 'strength': 4, 'toughness': 3, 'wisdom': 2, 'free_points': 4},
             'sniper': {'perception': 5, 'dexterity': 4, 'endurance': 3, 'toughness': 2, 'free_points': 4},
-            'augur': {'wisdom': 8, 'willpower': 8, 'vitality': 8, 'free_points': 8}
+            'augur': {'wisdom': 8, 'willpower': 8, 'vitality': 8, 'free_points': 8},
+            'monk': {'dexterity': 5, 'strength': 4, 'toughness': 3, 'vitality': 2, 'free_points': 4}
         }
         
         if current_level <= 24:
