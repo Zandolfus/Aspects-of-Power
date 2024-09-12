@@ -9,10 +9,24 @@ from typing import Dict, List, Optional
 # Handle class chnage from tier 1 to tier 2. When the character levels up to 25, prompt user to change class. Base class vs tier x class.
 
 class Character:
+    """
+    Represents a character in the game with various attributes, stats, and methods for character management.
+    """
+
     STATS = ['vitality', 'endurance', 'strength', 'dexterity', 'toughness', 'intelligence', 'willpower', 'wisdom', 'perception']
     META  = ['Class', 'Class level', 'Race', 'Race level', 'Race rank', 'Profession', 'Profession level']
 
     def __init__(self, name: str, stats: Optional[Dict[str, int]] = None, meta: Optional[Dict[str, str]] = None, finesse: bool = False, free_points: int = 0):
+        """
+        Initialize a new Character instance.
+
+        Args:
+            name (str): The character's name.
+            stats (Optional[Dict[str, int]]): The character's initial stats.
+            meta (Optional[Dict[str, str]]): The character's meta information.
+            finesse (bool): Whether the character uses finesse-based combat.
+            free_points (int): The number of unallocated stat points.
+        """
         self.name = name
         self.stats = stats or {stat: 0 for stat in self.STATS}
         self.meta = meta or {info: '' for info in self.META}
@@ -23,24 +37,36 @@ class Character:
         self.free_points = free_points
 
     def calculate_modifiers(self) -> Dict[str, float]:
+        """
+        Calculate and return the modifiers for all stats.
+
+        Returns:
+            Dict[str, float]: A dictionary of stat modifiers.
+        """
         return {stat: self.calculate_modifier(value) for stat, value in self.stats.items()}
 
     def _calculate_initial_free_points(self) -> int:
+        """
+        Calculate the initial number of free points based on class, profession, and race levels.
+
+        Returns:
+            int: The total number of initial free points.
+        """
         class_level = int(self.meta['Class level'])
         profession_level = int(self.meta['Profession level'])
         total_level = (class_level + profession_level) // 2
 
         free_points = 0
 
-        # Class free points
+        # Calculate free points from class levels
         free_points += min(class_level, 24) * 2  # 2 points per level up to 24
         free_points += max(0, class_level - 24) * 4  # 4 points per level from 25 onward
 
-        # Profession free points
+        # Calculate free points from profession levels
         profession = self.meta['Profession'].lower()
         free_points += profession_level * (8 if profession == 'justiciar' else 2)
 
-        # Race free points
+        # Calculate free points from race levels
         for level in range(1, total_level+1):
             if 0 <= level <= 9:
                 free_points += 1
@@ -54,6 +80,16 @@ class Character:
         return free_points
     
     def _calculate_free_points(self, target_level: int, level_type: str) -> int:
+        """
+        Calculate the number of free points gained when leveling up.
+
+        Args:
+            target_level (int): The target level to reach.
+            level_type (str): The type of level being increased ('Class', 'Profession', or 'Race').
+
+        Returns:
+            int: The number of free points gained.
+        """
         current_level = int(self.meta[f'{level_type} level'.capitalize()])
         professions = ['justiciar', 'judge', 'augur']
         race = self.meta['Race']
@@ -88,20 +124,42 @@ class Character:
 
     @staticmethod
     def calculate_modifier(attribute: int) -> float:
+        """
+        Calculate the modifier for a given attribute value.
+
+        Args:
+            attribute (int): The attribute value.
+
+        Returns:
+            float: The calculated modifier.
+        """
         return int(round((6000 / (1 + math.exp(-0.001 * (attribute - 500)))) - 2265, 0))
     
     @staticmethod
     def roll(dice: str) -> int:
-        if (dices := int(dice.split('d')[0])) > 1:
-            rolls = [randint(1, int(dice.split('d')[1])) for _ in range(dices)]
-            roll = sum(rolls)
-        else:
-            roll = randint(1, int(dice.split('d')[1]))
-        
-        return roll
+        """
+        Simulate rolling dice.
+
+        Args:
+            dice (str): A string representing the dice roll (e.g., "2d6").
+
+        Returns:
+            int: The result of the dice roll.
+        """
+        dices, sides = map(int, dice.split('d'))
+        return sum(randint(1, sides) for _ in range(dices))
 
     @classmethod
     def from_manual_input(cls, name: str) -> 'Character':
+        """
+        Create a Character instance from manual user input.
+
+        Args:
+            name (str): The character's name.
+
+        Returns:
+            Character: A new Character instance.
+        """
         stats = {}
         meta = {}
         
@@ -133,6 +191,15 @@ class Character:
 
     @classmethod
     def from_csv(cls, filename: str) -> List['Character']:
+        """
+        Create multiple Character instances from a CSV file.
+
+        Args:
+            filename (str): The name of the CSV file to read from.
+
+        Returns:
+            List[Character]: A list of Character instances.
+        """
         characters = []
         with open(filename, 'r', newline='') as file:
             reader = csv.DictReader(file)
@@ -145,6 +212,16 @@ class Character:
     
     @classmethod
     def load_character(cls, filename: str, character_name: str) -> Optional['Character']:
+        """
+        Load a specific character from a CSV file.
+
+        Args:
+            filename (str): The name of the CSV file to read from.
+            character_name (str): The name of the character to load.
+
+        Returns:
+            Optional[Character]: The loaded Character instance, or None if not found.
+        """
         with open(filename, 'r', newline='') as file:
             reader = csv.DictReader(file)
             for row in reader:
@@ -161,6 +238,9 @@ class Character:
         return None
     
     def add_stats(self) -> None:
+        """
+        Manually add stats to the character.
+        """
         print('\n' + f'Enter stats for {self.name}:'.center(20, '-'))
         stats = {}
         for stat in self.STATS:
@@ -178,6 +258,13 @@ class Character:
         self.current_health = self.max_health
 
     def update_stat(self, stat: str, value: int) -> None:
+        """
+        Update a specific stat for the character.
+
+        Args:
+            stat (str): The name of the stat to update.
+            value (int): The new value for the stat.
+        """
         if stat in self.stats:
             self.stats[stat] = value
             self.modifiers = self.calculate_modifiers()
@@ -188,6 +275,9 @@ class Character:
             print(f"Stat not found: {stat}. Available stats are: {', '.join(self.STATS)}")
 
     def add_meta(self) -> None:
+        """
+        Manually add meta information to the character.
+        """
         meta = {}
         print(f'Enter information for {self.name}:'.center(20, '-'))
         for info in self.META:
@@ -207,12 +297,22 @@ class Character:
         self.finesse = self.meta['Class'].lower() == 'light warrior'
 
     def update_meta(self, info: str, value: str) -> None:
+        """
+        Update a specific meta information for the character.
+
+        Args:
+            info (str): The name of the meta information to update.
+            value (str): The new value for the meta information.
+        """
         if info in self.meta:
             self.meta[info] = value
         else:
             print(f"Meta info not found: {info}. Available meta info are: {', '.join(self.META)}")
     
     def update_character_sheet(self) -> None:
+        """
+        Update the character's CSV file with current stats and modifiers.
+        """
         filename = f'{self.name.lower().replace(" ", "_")}_character_sheet.csv'
         with open(filename, 'w', newline='') as file:
             writer = csv.writer(file)
@@ -222,6 +322,13 @@ class Character:
         print(f"Updated character sheet for {self.name}")
 
     def to_csv(self, filename: str, mode: str = 'a') -> None:
+        """
+        Save the character's information to a CSV file.
+
+        Args:
+            filename (str): The name of the CSV file to save to.
+            mode (str): The file opening mode ('a' for append, 'w' for write).
+        """
         fieldnames = ['name'] + self.META + self.STATS + [f'{stat}_modifier' for stat in self.STATS] + ['free_points']
         
         existing_data = []
@@ -255,6 +362,9 @@ class Character:
         print(f"{'Updated' if character_exists else 'Added'} character data for {self.name} in {filename}")
 
     def create_character_sheet(self) -> None:
+        """
+        Create a CSV file with the character's current stats and modifiers.
+        """
         filename = f'''{self.name.lower().replace(' ', '_')}_character_sheet.csv'''
         with open(filename, 'w', newline='') as file:
             writer = csv.writer(file)
@@ -272,27 +382,45 @@ class Character:
         print(f"Updated character sheet for {self.name}")
     
     def is_alive(self) -> bool:
+        """
+        Check if the character is alive (has more than 0 health).
+        """
         return self.current_health > 0
 
     def reset_health(self) -> None:
+        """
+        Reset the character's current health to their maximum health.
+        """
         self.current_health = self.max_health
     
     def to_hit(self, target: 'Character'):
+        """
+        Calculate the chance to hit a target.
+
+        Args:
+            target (Character): The target character.
+
+        Returns:
+            tuple: A tuple containing the to-hit score, whether the attack hit, the roll, and the target's defense.
+        """
         roll = self.roll('1d20')
         defense = int(round(target.modifiers['dexterity'] + target.modifiers['strength']*0.3, 0))
         to_hit = round(((roll/100)*(self.modifiers['dexterity'] + self.modifiers['strength']*0.6) + self.modifiers['dexterity'] + self.modifiers['strength']*0.6)*0.911, 0)
         
-        if to_hit >= defense:
-            hit = True
-        else:
-            hit = False
+        hit = to_hit >= defense
         
         return to_hit, hit, roll, defense
     
     def dmg(self):
+        """
+        Calculate damage for an attack.
+
+        Returns:
+            tuple: A tuple containing the calculated damage and the damage roll.
+        """
         roll = self.roll('2d6')
         
-        if self.finesse is False:
+        if not self.finesse:
             dmg = int(round(((roll/50)*(self.modifiers['strength']) + self.modifiers['strength'])*0.5, 0))
         else:
             dmg = int(round(((roll/50)*(self.modifiers['strength'] + self.modifiers['dexterity']*0.25) + self.modifiers['strength'] + self.modifiers['dexterity']*0.25)*0.6, 0))
@@ -300,12 +428,21 @@ class Character:
         return dmg, roll
     
     def attack(self, target: 'Character'):
+        """
+        Perform an attack on a target character.
+
+        Args:
+            target (Character): The target character.
+
+        Returns:
+            tuple: A tuple containing whether the attack hit, the damage dealt, and the net damage after toughness.
+        """
         attk_score, hit, attk_roll, defense = self.to_hit(target)
         toughness = target.modifiers['toughness']
         damage = 0
         net_dmg = 0
         
-        if hit is True:
+        if hit:
             damage, dmg_roll = self.dmg()
             net_dmg = damage - toughness
             
@@ -315,6 +452,13 @@ class Character:
         return hit, damage, net_dmg
     
     def level_up(self, level_type: str, target_level: int):
+        """
+        Level up the character in a specific category.
+
+        Args:
+            level_type (str): The type of level to increase ('Class' or 'Profession').
+            target_level (int): The target level to reach.
+        """
         if level_type.lower() not in ['class', 'profession']:
             raise ValueError("Invalid level type. Must be 'Class' or 'Profession'.")
 
@@ -339,6 +483,9 @@ class Character:
         self.current_health = self.max_health
         
     def _update_race_level(self):
+        """
+        Update the character's race level based on their total level.
+        """
         total_level = int(self.meta['Class level']) + int(self.meta['Profession level'])
         current_race_level = int(self.meta['Race level'])
         new_race_level = total_level // 2
@@ -349,11 +496,18 @@ class Character:
             self.meta['Race level'] = str(new_race_level)
 
     def _apply_class_level_up(self, current_level):
+        """
+        Apply stat increases for class level-up.
+
+        Args:
+            current_level (int): The current level after leveling up.
+        """
         if current_level == 25:
             self.meta['Class'] = input('Enter your new class: ')
         
         class_name = self.meta['Class'].lower()
         
+        # Define stat gains for tier 1 and tier 2 classes
         tier1_class_gains = {
             'mage': {'intelligence': 2, 'willpower': 2, 'wisdom': 1, 'perception': 1, 'free_points': 2},
             'healer': {'willpower': 2, 'wisdom': 2, 'intelligence': 1, 'perception': 1, 'free_points': 2},
@@ -373,6 +527,7 @@ class Character:
             'monk': {'dexterity': 5, 'strength': 4, 'toughness': 3, 'vitality': 2, 'free_points': 4}
         }
         
+        # Apply stat gains based on current level and class
         if current_level <= 24:
             for stat, gain in tier1_class_gains[class_name].items():
                 if stat != 'free_points':
@@ -387,6 +542,12 @@ class Character:
                     self.free_points += gain
 
     def _apply_race_level_up(self, level):
+        """
+        Apply stat increases for race level-up.
+
+        Args:
+            level (int): The current race level after leveling up.
+        """
         race = self.meta['Race'].lower()
 
         if race == 'human':
@@ -431,11 +592,18 @@ class Character:
                 self.stats[stat] += value
     
     def _apply_profession_level_up(self, current_level):
+        """
+        Apply stat increases for profession level-up.
+
+        Args:
+            current_level (int): The current profession level after leveling up.
+        """
         if current_level == 25:
             self.meta['Profession'] = input('Enter your new profession: ')
         
         profession = self.meta['Profession'].lower()
 
+        # Define stat gains for tier 1 and tier 2 professions
         tier1_profession_gains = {
             'beginner jeweler of the elements': {'wisdom': 2, 'dexterity': 2, 'vitality': 1, 'perception': 1, 'free_points': 2},
             'beginner smith of the moonshadow': {'strength': 2, 'perception': 2, 'vitality': 1, 'intelligence': 1, 'free_points': 2},
@@ -458,6 +626,7 @@ class Character:
             'tailor of ingenuity': {'dexterity': 5, 'perception': 4, 'wisdom': 3, 'willpower': 2, 'free_points': 4}
         }
         
+        # Apply stat gains based on current level and profession
         if current_level <= 24:
             if profession in tier1_profession_gains:
                 for stat, gain in tier1_profession_gains[profession].items():
@@ -478,6 +647,9 @@ class Character:
                 print('This profession does not exist!')
 
     def allocate_free_points(self):
+        """
+        Allow the user to allocate free points to stats.
+        """
         if self.free_points == 0:
             print("No free points available to allocate.")
             return
@@ -495,6 +667,9 @@ class Character:
         self.modifiers = self.calculate_modifiers()
 
     def _manual_allocation(self):
+        """
+        Manually allocate free points to stats.
+        """
         remaining_points = self.free_points
 
         while remaining_points > 0:
@@ -527,6 +702,9 @@ class Character:
             print(f"{remaining_points} points were left unallocated and saved for later.")
 
     def _random_allocation(self):
+        """
+        Randomly allocate free points to stats.
+        """
         print("Randomly allocating free points...")
         for _ in range(self.free_points):
             stat = random.choice(self.STATS)
@@ -559,7 +737,7 @@ if __name__ == '__main__':
                            "Profession": "Uninitiated", "Profession level": "0"},
                      stats={'vitality': 5, 'endurance': 5, 'strength': 5, 'dexterity': 5,
                               'intelligence': 5, 'willpower': 5, 'wisdom': 5, 'perception': 5, 'toughness': 5})
-    # char = Character.load_character('all_chars.csv', 'Felicia')
+    char = Character.load_character('all_char.csv', 'Felicia')
     char.level_up('Class', 20)
     # char.level_up('Profession', 15)
     # char.update_meta('Race', 'Half-Asrai')
