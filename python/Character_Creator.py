@@ -524,7 +524,15 @@ class Character:
             'glade guardian': {'dexterity': 5, 'strength': 4, 'toughness': 3, 'wisdom': 2, 'free_points': 4},
             'sniper': {'perception': 5, 'dexterity': 4, 'endurance': 3, 'toughness': 2, 'free_points': 4},
             'augur': {'wisdom': 8, 'willpower': 8, 'vitality': 8, 'free_points': 8},
-            'monk': {'dexterity': 5, 'strength': 4, 'toughness': 3, 'vitality': 2, 'free_points': 4}
+            'monk': {'dexterity': 5, 'strength': 4, 'toughness': 3, 'vitality': 2, 'free_points': 4},
+            'spearman': {'strength': 5, 'dexterity': 4, 'vitality': 3, 'endurance': 2, 'free_points': 4},
+            'knife artist': {'dexterity': 5, 'perception': 4, 'vitality': 3, 'endurance': 2, 'free_points': 4},
+            'bloodmage': {'intelligence': 5, 'wisdom': 4, 'vitality': 3, 'willpower': 2, 'free_points': 4},
+            'aspiring blade of light': {'strength': 5, 'dexterity': 4, 'vitality': 3, 'endurance': 2, 'free_points': 4},
+            'spearman': {'strength': 5, 'dexterity': 4, 'vitality': 3, 'endurance': 2, 'free_points': 4},
+            'icecaller': {'intelligence': 5, 'willpower': 4, 'vitality': 3, 'perception': 2, 'free_points': 4},
+
+
         }
         
         # Apply stat gains based on current level and class
