@@ -29,9 +29,23 @@ def create_character():
     return Character.from_manual_input(name)
 
 def load_character():
-    filename = input("Enter the CSV filename to load from: ")
+    filename = input(r"Enter the CSV filename to load from: ")
+    _, ext = os.path.splitext(filename)
+    
+    if not ext:
+            filename = filename + '.csv'
+    else:
+            if not ext.endswith('.csv'):
+                raise ValueError('This is not a csv file! PLease provide a csv file path.')
+            
+    if not os.path.exists(filename):
+        print('\n' + 'File does not exist'.center(50, '-'))
+        print(f'This is your current directory: {os.getcwd()}')
+        print('Starting over...')
+        return None
+    
     name = input("Enter the character name to load: ")
-    return Character.load_character(filename, name)
+    return Character.load_character(filename, name), filename
 
 def view_character(character: Character):
     if character:
@@ -116,10 +130,12 @@ def simulate_combat(character: Character):
     else:
         print("No character loaded.")
 
-def save_character(character: Character):
-    if character:
-        filename = input("Enter the CSV filename to save to: ")
+def save_character(character: Character, file: str):
+    if character and not file:
+        filename = input(r"Enter the CSV filename to save to: ")
         character.to_csv(filename)
+    elif file:
+        character.to_csv(file)
     else:
         print("No character loaded.")
 
@@ -138,6 +154,7 @@ def allocate_points(character: Character):
 
 def main():
     character = None
+    file = None
     while True:
         clear_screen()
         print_menu(character)
@@ -148,7 +165,7 @@ def main():
                 case '1':
                     character = create_character()
                 case '2':
-                    character = load_character()
+                    character, file = load_character()
                 case '0':
                     print("Thank you for using the Character Creator Tester!")
                     break
@@ -173,7 +190,7 @@ def main():
                     simulate_combat(character)
                 case '6':
                     clear_screen()
-                    save_character(character)
+                    save_character(character, file)
                 case '7':
                     clear_screen()
                     create_sheet(character)
