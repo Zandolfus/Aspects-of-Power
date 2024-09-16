@@ -77,11 +77,11 @@ export class AspectsofPowerItem extends Item {
             rollMode: rollMode,
             flavor: "To Hit",
           });
-          rollData.formula="((("+rollData.roll.dice+"/50*"+rollData.roll.abilitymod+")+"+rollData.roll.abilitymod+"/1.25"+")*"+rollData.roll.diceBonus+")";
+          rollData.formula="((("+rollData.roll.dice+"/50*("+this.actor.system.abilities.strength.mod+"+"+rollData.roll.abilitymod+"/4)"+")+"+this.actor.system.abilities.strength.mod+"+"+rollData.roll.abilitymod+"/4"+")*"+rollData.roll.diceBonus+")";
         }
-        else 
+        else {
           rollData.formula="(((1d20/100*"+rollData.roll.abilitymod+")+"+rollData.roll.abilitymod+")*"+rollData.roll.diceBonus+")";
-
+        }
         this.actor.system[rollData.roll.resource].value = this.actor.system[rollData.roll.resource].value - rollData.roll.cost;
         this.update();
         this.actor.sheet._render();
@@ -124,7 +124,7 @@ export class AspectsofPowerItem extends Item {
             rollMode: rollMode,
             flavor: "To Hit",
           });
-          rollData.formula="((("+rollData.roll.dice+"/50*"+rollData.roll.abilitymod+")+"+rollData.roll.abilitymod+"/1.25"+")*"+rollData.roll.diceBonus+")";
+          rollData.formula="((("+rollData.roll.dice+"/50*("+this.actor.system.abilities.strength.mod+"+"+rollData.roll.abilitymod+"/4)"+")+"+this.actor.system.abilities.strength.mod+"+"+rollData.roll.abilitymod+"/4"+")*"+rollData.roll.diceBonus+")";
         }
         else 
           rollData.formula="((("+rollData.roll.dice+"/100*"+rollData.roll.abilitymod+")+"+rollData.roll.abilitymod+")*"+rollData.roll.diceBonus+")";
