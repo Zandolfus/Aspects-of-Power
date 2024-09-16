@@ -530,7 +530,7 @@ class Character:
             'bloodmage': {'intelligence': 5, 'wisdom': 4, 'vitality': 3, 'willpower': 2, 'free_points': 4},
             'aspiring blade of light': {'strength': 5, 'dexterity': 4, 'vitality': 3, 'endurance': 2, 'free_points': 4},
             'beginner assassin': {'dexterity': 5, 'strength': 4, 'perception': 3, 'endurance': 2, 'free_points': 4},
-            'icecaller': {'intelligence': 5, 'willpower': 4, 'vitality': 3, 'perception': 2, 'free_points': 4},
+            'hydromancer': {'intelligence': 5, 'willpower': 4, 'vitality': 3, 'perception': 2, 'free_points': 4},
             'clergyman': {'wisdom': 5, 'willpower': 4, 'vitality': 3, 'endurance': 2, 'free_points': 4},
             'swashbuckler': {'strength': 5, 'dexterity': 4, 'vitality': 3, 'endurance': 2, 'free_points': 4},
             'witch of ages': {'willpower': 5, 'intelligence': 4, 'wisdom': 3, 'vitality': 2, 'free_points': 4},
