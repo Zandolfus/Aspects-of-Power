@@ -79,7 +79,7 @@ def update_meta(character: Character):
 
 def level_up(character: Character):
     if character:
-        level_type = input("Enter level type (Class or Profession): ")
+        level_type = input("Enter level type (Class or Profession): ").capitalize()
         target_level = int(input("Enter target level: "))
         character.level_up(level_type, target_level)
     else:
