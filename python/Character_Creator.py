@@ -625,7 +625,6 @@ class Character:
             'pickpocket': {'perception': 2, 'dexterity': 2, 'strength': 1, 'endurance': 1, 'free_points': 2},
             'novice tailor': {'dexterity': 2, 'perception': 2, 'wisdom': 1, 'willpower': 1, 'free_points': 2},
             'builder': {'strength': 2, 'dexterity': 2, 'endurance': 1, 'intelligence': 1, 'free_points': 2}
-            
         }
 
         tier2_profession_gains = {
@@ -747,7 +746,7 @@ if __name__ == '__main__':
                            "Profession": "Uninitiated", "Profession level": "0"},
                      stats={'vitality': 5, 'endurance': 5, 'strength': 5, 'dexterity': 5,
                               'intelligence': 5, 'willpower': 5, 'wisdom': 5, 'perception': 5, 'toughness': 5})
-    char = Character.load_character('all_char.csv', 'Felicia')
+    char = Character.load_character('all_chars.csv', 'Felicia')
     char.level_up('Class', 20)
     # char.level_up('Profession', 15)
     # char.update_meta('Race', 'Half-Asrai')
