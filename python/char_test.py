@@ -21,7 +21,8 @@ def print_menu(character: Character):
         print("6. Save character to CSV")
         print("7. Create character sheet")
         print("8. Allocate free points")
-        print("9. Start Over")
+        print("9. Add Blessing")
+        print("10. Start Over")
         print("0. Exit")
 
 def create_character():
@@ -79,11 +80,19 @@ def update_meta(character: Character):
 
 def level_up(character: Character):
     if character:
-        level_type = input("Enter level type (Class or Profession): ").capitalize()
+        level_type = input("Enter level type (Class or Profession): ")
         target_level = int(input("Enter target level: "))
         character.level_up(level_type, target_level)
+        
+        blessing = input('Do you want to add a blessing (yes/no)? ')
+        
+        if blessing.lower() == 'yes':
+            character.add_blessing()
     else:
         print("No character loaded.")
+        
+def blessing(character: Character):
+    character.add_blessing()
         
 def level_up_incr_levels(character: Character):
     if character:
@@ -198,6 +207,9 @@ def main():
                     clear_screen()
                     allocate_points(character)
                 case '9':
+                    clear_screen()
+                    blessing(character)
+                case '10':
                     character = None
                 case '0':
                     print("Thank you for using the Character Creator Tester!")

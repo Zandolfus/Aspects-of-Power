@@ -1,4 +1,4 @@
-name,Class,Class level,Race,Race level,Race rank,Profession,Profession level,vitality,endurance,strength,dexterity,toughness,intelligence,willpower,wisdom,perception,vitality_modifier,endurance_modifier,strength_modifier,dexterity_modifier,toughness_modifier,intelligence_modifier,willpower_modifier,wisdom_modifier,perception_modifier,free_points
+Name,Class,Class level,Race,Race level,Race rank,Profession,Profession level,vitality,endurance,strength,dexterity,toughness,intelligence,willpower,wisdom,perception,vitality_modifier,endurance_modifier,strength_modifier,dexterity_modifier,toughness_modifier,intelligence_modifier,willpower_modifier,wisdom_modifier,perception_modifier,free_points
 Valentine,Mage,21,Human,10,F,Uninitiated,0,23,15,15,15,23,78,73,36,36,21,21,21,21,21,81,81,51,51,0
 Aiden,Mage,21,Human,10,F,Uninitiated,0,15,15,15,28,35,77,57,36,36,21,21,21,21,21,81,81,51,51,0
 Bruce,Heavy Warrior,10,Human,17,F,Crusher,25,42,100,138,50,47,22,22,22,70,60,143,198,71,67,31,31,31,100,0
