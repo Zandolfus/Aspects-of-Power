@@ -17,7 +17,7 @@ class Character:
 
     def __init__(self, name: str, stats: Optional[Dict[str, int]] = None, 
                  base_stats: Optional[Dict[str, int]] = None, meta: Optional[Dict[str, str]] = None, 
-                 finesse: bool = False, free_points: int = 0):
+                 finesse: bool = False, free_points: int = 0, blessing: bool = False):
         """
         Initialize a new Character instance.
 
@@ -40,7 +40,8 @@ class Character:
         self.item_repo = ItemRepository()
         self.raw_stats = stats.copy()
         self.base_stats = base_stats or self.derive_base_stats()
-
+        self.blessing = self.add_blessing(init=True) if blessing is True else None
+    
     def derive_base_stats(self) -> Dict[str, int]:
         if self.meta["Class level"] == 0 and self.meta["Race level"] == 0 and self.meta["Profession level"] == 0:
             return self.stats.copy()
@@ -248,7 +249,7 @@ class Character:
                 self.max_health = self.modifiers["vitality"]
                 self.current_health = self.max_health
         else:
-            print(f"Stat not found: {stat}. Available stats are: {", ".join(self.STATS)}")
+            print(f"Stat not found: {stat}. Available stats are: {', '.join(self.STATS)}")
 
         self.raw_stats = self.stats.copy()
 
@@ -285,13 +286,13 @@ class Character:
         if info in self.meta:
             self.meta[info] = value
         else:
-            print(f"Meta info not found: {info}. Available meta info are: {", ".join(self.META)}")
+            print(f"Meta info not found: {info}. Available meta info are: {', '.join(self.META)}")
 
     def update_character_sheet(self) -> None:
         """
         Update the character"s CSV file with current stats and modifiers.
         """
-        filename = f"{self.name.lower().replace(" ", "_")}_character_sheet.csv"
+        filename = f"{self.name.lower().replace(' ', '_')}_character_sheet.csv"
         with open(filename, "w", newline="") as file:
             writer = csv.writer(file)
             writer.writerow(["Attribute", "Statistic", "Modifier"])
@@ -338,13 +339,13 @@ class Character:
             }
             writer.writerow(row)
 
-        print(f"{"Updated" if character_exists else "Added"} character data for {self.name} in {filename}")
+        print(f"{'Updated' if character_exists else 'Added'} character data for {self.name} in {filename}")
 
     def create_character_sheet(self) -> None:
         """
         Create a CSV file with the character"s current stats and modifiers.
         """
-        filename = f"""{self.name.lower().replace(" ", "_")}_character_sheet.csv"""
+        filename = f"{self.name.lower().replace(' ', '_')}_character_sheet.csv"
         with open(filename, "w", newline="") as file:
             writer = csv.writer(file)
             writer.writerow(["Attribute", "Statistic", "Modifier"])
@@ -352,7 +353,7 @@ class Character:
                 writer.writerow([stat.capitalize(), self.stats[stat], self.modifiers[stat]])
 
     def update_character_sheet(self) -> None:
-        filename = f"{self.name.lower().replace(" ", "_")}_character_sheet.csv"
+        filename = f"{self.name.lower().replace(' ', '_')}_character_sheet.csv"
         with open(filename, "w", newline="") as file:
             writer = csv.writer(file)
             writer.writerow(["Attribute", "Statistic", "Modifier"])
@@ -462,19 +463,28 @@ class Character:
         self.current_health = self.max_health
         self.raw_stats = self.stats.copy()
 
-    def add_blessing(self):
+    def add_blessing(self, init: bool = False):
         print("Adding a blessing...")
 
+        blessing = {}
         choice = "yes"
         while choice.lower() != "no":
             stat = input("Enter the stat you want to increase: ")
             if stat in self.STATS:
                 value = int(input(f"Enter the value to add for {stat}: "))
                 self.update_stat(stat, value, add=True)
+                blessing[stat] = value
                 print(f"Updated {stat} to {self.stats[stat]}")
             else:
                 print(f"Invalid stat! Available stats: {self.STATS}")
             choice = input("Do you want to continue (yes/no)? ")
+            
+        confirmation = input("Was a blessing added (yes/no)? ")
+        if confirmation.lower() == 'yes':
+            if init is False:
+                self.blessing = blessing
+            else:
+                return blessing 
 
     def _update_race_level(self):
         """
@@ -1059,7 +1069,7 @@ class ItemRepository:
 
         for item_name, item_data in self.items.items():
             print(f"Item: {capwords(item_name)}")
-            print(f"Description: {item_data["description"]}")
+            print(f"Description: {item_data['description']}")
             
             if item_data["stats"]:
                 print("Stats:")
@@ -1144,7 +1154,7 @@ class Simulator:
         for level_type, target_level in levels.items():
             print(f"\nSimulating {level_type} level-up for {character.name} to level {target_level}")
             character.level_up(level_type, target_level)
-            print(f"{level_type} level: {character.meta[f"{level_type} level"]}")
+            print(f"{level_type} level: {character.meta[f'{level_type} level']}")
 
         print("\nLeveling complete. Current character stats:")
         print(character)
@@ -1158,7 +1168,8 @@ if __name__ == "__main__":
                            "Race": "Human", "Race level": 0, "Race rank": "G",
                            "Profession": "Justiciar", "Profession level": 0},
                      stats={"vitality": 7, "endurance": 8, "strength": 7, "dexterity": 10,
-                              "intelligence": 10, "willpower": 10, "wisdom": 10, "perception": 8, "toughness": 5})
+                              "intelligence": 10, "willpower": 10, "wisdom": 10, "perception": 8, "toughness": 5},
+                     blessing=True)
     # char = Character.load_character("all_chars.csv", "Fei")
     char.level_up("Class", 34)
     char.level_up("Profession", 10)
