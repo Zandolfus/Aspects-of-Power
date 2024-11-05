@@ -198,12 +198,12 @@ class Character:
         with open(filename, "r", newline="") as file:
             reader = csv.DictReader(file)
             for row in reader:
-                if row["name"].lower() == character_name.lower():
-                    name = row.pop("name")
+                if row["Name"].lower() == character_name.lower():
+                    name = row.pop("Name")
                     stats = {stat: int(row[stat]) for stat in cls.STATS}
                     meta = {info: row[info] for info in cls.META}
                     free_points = int(row["free_points"])
-                    character = cls(name, stats, meta, free_points=free_points)
+                    character = cls(name=name, stats=stats, meta=meta, free_points=free_points)
                     if free_points > 0:
                         print(f"Loaded character {name} has {free_points} unallocated free points.")
                     return character
@@ -689,6 +689,13 @@ class Character:
                 "wisdom": 3,
                 "willpower": 2,
                 "free_points": 4,
+            },
+            "overwatch": {
+                "perception": 5,
+                "dexterity": 4,
+                "endurance": 3,
+                "strength": 2,
+                "free_points": 4,
             }
         }
 
@@ -851,6 +858,9 @@ class Character:
             "judge": {
                 "free_points": 8
             },
+            "magistrate": {
+                "free_points": 8
+            },
             "gatherer": {
                 "strength": 2,
                 "perception": 2,
@@ -899,6 +909,27 @@ class Character:
                 "willpower": 1,
                 "toughness": 1,
                 "free_points": 2,
+            },
+            "beginner leatherworker of the cosmos": {
+                "dexterity": 2,
+                "willpower": 2,
+                "strength": 1,
+                "intelligence": 1,
+                "free_points": 2,
+            },
+            "seed of new life": {
+                "willpower": 2,
+                "wisdom": 2,
+                "perception": 1,
+                "vitality": 1,
+                "free_points": 2,
+            },
+            "vanguard of new growth": {
+                "perception": 2,
+                "vitality": 2,
+                "strength": 1,
+                "toughness": 1,
+                "free_points": 2,
             }
         }
 
@@ -934,6 +965,13 @@ class Character:
                 "dexterity": 5,
                 "perception": 4,
                 "wisdom": 3,
+                "willpower": 2,
+                "free_points": 4,
+            },
+            "architect": {
+                "strength": 5,
+                "dexterity": 4,
+                "endurance": 3,
                 "willpower": 2,
                 "free_points": 4,
             }
