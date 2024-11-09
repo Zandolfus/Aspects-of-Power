@@ -133,7 +133,7 @@
             {{#each system.abilities as |ability key|}}
             <div class="ability flexrow flex-group-center">
               <label for="system.abilities.{{key}}.value" class="resource-label rollable flexlarge align-left" data-roll="(d20/100)*@abilities.{{key}}.mod+@abilities.{{key}}.mod" data-label="{{localize (lookup @root.config.abilities key)}}">{{localize (lookup @root.config.abilities key)}}</label>
-              <input type="text" name="system.abilities.{{key}}.value" value="{{ability.value}}" data-dtype="Number"/>
+              <input type="text" name="system.abilities.{{key}}.value" value="{{numberFormat ability.value decimals=0 sign=true}}" data-dtype="Number"/>
               <span class="stat-mod rollable" data-roll="(d20/100)*@abilities.{{key}}.mod+@abilities.{{key}}.mod" data-label="{{localize (lookup @root.config.abilities key)}}">{{numberFormat ability.mod decimals=0 sign=true}}</span>
             </div>
             {{/each}}
