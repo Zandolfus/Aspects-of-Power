@@ -811,6 +811,18 @@ class Character:
                     },
                 },
             },
+            "monster": {
+                "rank": { 
+                    0<= level <= 24: {
+                        "free_points": 42,
+                        "rank": "F"                      
+                    },
+                    25 <= level <= 99: {
+                        "free_points": 63,
+                        "rank": "E"
+                    },
+                }
+            },
         }
 
         for rank, stats in races[race]["rank"].items():
