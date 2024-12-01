@@ -89,6 +89,16 @@ export class AspectsofPowerItem extends Item {
           });
           rollData.formula="((("+rollData.roll.dice+"/100*"+rollData.roll.abilitymod+")+"+rollData.roll.abilitymod+")*"+rollData.roll.diceBonus+")";
         }
+        else if (rollData.roll.type == "magic_melee"){
+          rollData.formula="((((d20/100)*("+this.actor.system.abilities.intelligence.mod+"+"+this.actor.system.abilities.strength.mod+"*(6/10)))+"+this.actor.system.abilities.intelligence.mod+"+"+this.actor.system.abilities.strength.mod+"*(6/10)))*(911/1000)";
+          const roll = new Roll(rollData.formula, rollData);
+          roll.toMessage({
+            speaker: speaker,
+            rollMode: rollMode,
+            flavor: "To Hit",
+          });
+          rollData.formula="((("+rollData.roll.dice+"/50*("+this.actor.system.abilities.strength.mod+"+"+rollData.roll.abilitymod+"/4)"+")+"+this.actor.system.abilities.strength.mod+"+"+rollData.roll.abilitymod+"/4"+")*"+rollData.roll.diceBonus+")";
+        }
         else {
           rollData.formula="(((1d20/100*"+rollData.roll.abilitymod+")+"+rollData.roll.abilitymod+")*"+rollData.roll.diceBonus+")";
         }
@@ -145,6 +155,16 @@ export class AspectsofPowerItem extends Item {
             flavor: "To Hit",
           });
           rollData.formula="((("+rollData.roll.dice+"/100*"+rollData.roll.abilitymod+")+"+rollData.roll.abilitymod+")*"+rollData.roll.diceBonus+")";
+        }
+        else if (rollData.roll.type == "magic_melee"){
+          rollData.formula="((((d20/100)*("+this.actor.system.abilities.intelligence.mod+"+"+this.actor.system.abilities.strength.mod+"*(6/10)))+"+this.actor.system.abilities.intelligence.mod+"+"+this.actor.system.abilities.strength.mod+"*(6/10)))*(911/1000)";
+          const roll = new Roll(rollData.formula, rollData);
+          roll.toMessage({
+            speaker: speaker,
+            rollMode: rollMode,
+            flavor: "To Hit",
+          });
+          rollData.formula="((("+rollData.roll.dice+"/50*("+this.actor.system.abilities.strength.mod+"+"+rollData.roll.abilitymod+"/4)"+")+"+this.actor.system.abilities.strength.mod+"+"+rollData.roll.abilitymod+"/4"+")*"+rollData.roll.diceBonus+")";
         }
         else 
           rollData.formula="((("+rollData.roll.dice+"/100*"+rollData.roll.abilitymod+")+"+rollData.roll.abilitymod+")*"+rollData.roll.diceBonus+")";
