@@ -71,11 +71,11 @@
           <div class='grid-span-1'>
             <label class='resource-label'>Skill Type</label>
               <select name='system.roll.type' data-dtype='String'>
-                <option value="weapon" {{#if (eq system.roll.type "weapon")}}selected{{/if}}>Weapon</option>
+                <option value="str_weapon" {{#if (eq system.roll.type "str_weapon")}}selected{{/if}}>Strength Weapon</option>
+                <option value="dex_weapon" {{#if (eq system.roll.type "dex_weapon")}}selected{{/if}}>Dexterity Weapon</option>
                 <option value="magic" {{#if (eq system.roll.type "magic")}}selected{{/if}}>Magic</option>
                 <option value="magic_projectile" {{#if (eq system.roll.type "magic_projectile")}}selected{{/if}}>Magic Projectile</option>
                 <option value="magic_melee" {{#if (eq system.roll.type "magic_melee")}}selected{{/if}}>Magic Melee</option>
-
               </select>
           </div>
         </div>
