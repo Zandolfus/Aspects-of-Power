@@ -77,7 +77,7 @@ export class AspectsofPowerItem extends Item {
             rollMode: rollMode,
             flavor: "To Hit",
           });
-          rollData.formula="((("+rollData.roll.dice+"/50*("+this.actor.system.abilities.strength.mod+"+"+rollData.roll.abilitymod+"/4)"+")+"+this.actor.system.abilities.strength.mod+"+"+rollData.roll.abilitymod+"/4"+")*"+rollData.roll.diceBonus+")";
+          rollData.formula="((("+rollData.roll.dice+"/50*("+this.actor.system.abilities.strength.mod+"+"+this.actor.system.abilities.dexterity.mod+"/4)"+")+"+this.actor.system.abilities.strength.mod+"+"+this.actor.system.abilities.dexterity.mod+"/4"+")*"+rollData.roll.diceBonus+")";
         }
         else if (rollData.roll.type == "str_weapon"){
           rollData.formula="((((d20/100)*("+this.actor.system.abilities.strength.mod+"+"+this.actor.system.abilities.dexterity.mod+"*(3/10)))+"+this.actor.system.abilities.strength.mod+"+"+this.actor.system.abilities.dexterity.mod+"*(3/10)))";
@@ -87,7 +87,7 @@ export class AspectsofPowerItem extends Item {
             rollMode: rollMode,
             flavor: "To Hit",
           });
-          rollData.formula="(("+rollData.roll.dice+"/50*("+this.actor.system.abilities.strength.mod+")+"+this.actor.system.abilities.strength.mod+"+"+rollData.roll.abilitymod+"/4"+")*"+rollData.roll.diceBonus+")";
+          rollData.formula="(("+rollData.roll.dice+"/50*("+this.actor.system.abilities.strength.mod+")+"+this.actor.system.abilities.strength.mod+"+"+this.actor.system.abilities.strength.mod+"/4"+")*"+rollData.roll.diceBonus+")";
         }
         else if (rollData.roll.type == "magic_projectile"){
           rollData.formula="((((d20/100)*("+this.actor.system.abilities.intelligence.mod+"+"+this.actor.system.abilities.perception.mod+"*(3/10)))+"+this.actor.system.abilities.intelligence.mod+"+"+this.actor.system.abilities.perception.mod+"*(3/10)))";
