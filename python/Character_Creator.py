@@ -942,6 +942,20 @@ class Character:
                 "strength": 1,
                 "toughness": 1,
                 "free_points": 2,
+            },
+            "student shaper of the asrai": {
+                "dexterity": 2,
+                "perception": 2,
+                "willpower": 1,
+                "wisdom": 1,
+                "free_points": 2,
+            },
+            "alchemist of flame's heart": {
+                "wisdom": 2,
+                "perception": 2,
+                "willpower": 1,
+                "intelligence": 1,
+                "free_points": 2,
             }
         }
 
