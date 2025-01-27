@@ -956,6 +956,13 @@ class Character:
                 "willpower": 1,
                 "intelligence": 1,
                 "free_points": 2,
+            },
+            "drums of war, largo": {
+                "strength": 2,
+                "dexterity": 2,
+                "willpower": 1,
+                "wisdom": 1,
+                "free_points": 2,
             }
         }
 
@@ -999,6 +1006,13 @@ class Character:
                 "dexterity": 4,
                 "endurance": 3,
                 "willpower": 2,
+                "free_points": 4,
+            },
+            "drums of war, andante": {
+                "strength": 5,
+                "dexterity": 4,
+                "willpower": 3,
+                "wisdom": 2,
                 "free_points": 4,
             }
             
