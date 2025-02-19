@@ -70,27 +70,37 @@ export class AspectsofPowerItem extends Item {
       rollData.roll.resourcevalue=this.actor.system[rollData.roll.resource].value;
       if (rollData.roll.resourcevalue >= rollData.roll.cost) {
         if (rollData.roll.type == "dex_weapon"){
-          rollData.formula="((((d20/100)*("+this.actor.system.abilities.dexterity.mod+"+"+this.actor.system.abilities.strength.mod+"*(3/10)))+"+this.actor.system.abilities.dexterity.mod+"+"+this.actor.system.abilities.strength.mod+"*(3/10)))";
+          rollData.formula="((((d20/100)*("+this.actor.system.abilities.dexterity.mod+"*(9/10)"+"+"+this.actor.system.abilities.strength.mod+"*(3/10)))+"+this.actor.system.abilities.dexterity.mod+"+"+this.actor.system.abilities.strength.mod+"*(3/10)))";
           const roll = new Roll(rollData.formula, rollData);
           roll.toMessage({
             speaker: speaker,
             rollMode: rollMode,
             flavor: "To Hit",
           });
-          rollData.formula="((("+rollData.roll.dice+"/50*("+this.actor.system.abilities.strength.mod+"+"+this.actor.system.abilities.dexterity.mod+"/4)"+")+"+this.actor.system.abilities.strength.mod+"+"+this.actor.system.abilities.dexterity.mod+"/4"+")*"+rollData.roll.diceBonus+")";
+          rollData.formula="((("+rollData.roll.dice+"/50*("+this.actor.system.abilities.strength.mod+"*(9/10)"+"+"+this.actor.system.abilities.dexterity.mod+"*(3/10))"+")+"+this.actor.system.abilities.strength.mod+"+"+this.actor.system.abilities.dexterity.mod+"*(3/10)"+")*"+rollData.roll.diceBonus+")";
         }
         else if (rollData.roll.type == "str_weapon"){
-          rollData.formula="((((d20/100)*("+this.actor.system.abilities.strength.mod+"+"+this.actor.system.abilities.dexterity.mod+"*(3/10)))+"+this.actor.system.abilities.strength.mod+"+"+this.actor.system.abilities.dexterity.mod+"*(3/10)))";
+          rollData.formula="((((d20/100)*("+this.actor.system.abilities.strength.mod+"*(9/10)"+"+"+this.actor.system.abilities.dexterity.mod+"*(3/10)))+"+this.actor.system.abilities.strength.mod+"+"+this.actor.system.abilities.dexterity.mod+"*(3/10)))";
           const roll = new Roll(rollData.formula, rollData);
           roll.toMessage({
             speaker: speaker,
             rollMode: rollMode,
             flavor: "To Hit",
           });
-          rollData.formula="(("+rollData.roll.dice+"/50*("+this.actor.system.abilities.strength.mod+")+"+this.actor.system.abilities.strength.mod+"+"+this.actor.system.abilities.strength.mod+"/4"+")*"+rollData.roll.diceBonus+")";
+          rollData.formula="(("+rollData.roll.dice+"/50*("+this.actor.system.abilities.strength.mod+")+"+this.actor.system.abilities.strength.mod+"+"+this.actor.system.abilities.strength.mod+"*(3/10)"+")*"+rollData.roll.diceBonus+")";
+        }
+        else if (rollData.roll.type == "phys_ranged"){
+          rollData.formula="((((d20/100)*("+this.actor.system.abilities.perception.mod+"*(9/10)"+"+"+this.actor.system.abilities.dexterity.mod+"*(3/10)))+"+this.actor.system.abilities.perception.mod+"+"+this.actor.system.abilities.dexterity.mod+"*(3/10)))";
+          const roll = new Roll(rollData.formula, rollData);
+          roll.toMessage({
+            speaker: speaker,
+            rollMode: rollMode,
+            flavor: "To Hit",
+          });
+          rollData.formula="((("+rollData.roll.dice+"/50*("+this.actor.system.abilities.perception.mod+"*(9/10)"+"+"+this.actor.system.abilities.dexterity.mod+"*(3/10))"+")+"+this.actor.system.abilities.perception.mod+"+"+this.actor.system.abilities.dexterity.mod+"*(3/10)"+")*"+rollData.roll.diceBonus+")";
         }
         else if (rollData.roll.type == "magic_projectile"){
-          rollData.formula="((((d20/100)*("+this.actor.system.abilities.intelligence.mod+"+"+this.actor.system.abilities.perception.mod+"*(3/10)))+"+this.actor.system.abilities.intelligence.mod+"+"+this.actor.system.abilities.perception.mod+"*(3/10)))";
+          rollData.formula="((((d20/100)*("+this.actor.system.abilities.intelligence.mod+"*(9/10)"+"+"+this.actor.system.abilities.perception.mod+"*(3/10)))+"+this.actor.system.abilities.intelligence.mod+"+"+this.actor.system.abilities.perception.mod+"*(3/10)))";
           const roll = new Roll(rollData.formula, rollData);
           roll.toMessage({
             speaker: speaker,
@@ -100,14 +110,14 @@ export class AspectsofPowerItem extends Item {
           rollData.formula="((("+rollData.roll.dice+"/100*"+rollData.roll.abilitymod+")+"+rollData.roll.abilitymod+")*"+rollData.roll.diceBonus+")";
         }
         else if (rollData.roll.type == "magic_melee"){
-          rollData.formula="((((d20/100)*("+this.actor.system.abilities.intelligence.mod+"+"+this.actor.system.abilities.strength.mod+"*(3/10)))+"+this.actor.system.abilities.intelligence.mod+"+"+this.actor.system.abilities.strength.mod+"*(3/10)))";
+          rollData.formula="((((d20/100)*("+this.actor.system.abilities.intelligence.mod+"*(9/10)"+"+"+this.actor.system.abilities.strength.mod+"*(3/10)))+"+this.actor.system.abilities.intelligence.mod+"+"+this.actor.system.abilities.strength.mod+"*(3/10)))";
           const roll = new Roll(rollData.formula, rollData);
           roll.toMessage({
             speaker: speaker,
             rollMode: rollMode,
             flavor: "To Hit",
           });
-          rollData.formula="((("+rollData.roll.dice+"/50*("+this.actor.system.abilities.intelligence.mod+"+"+this.actor.system.abilities.strength.mod+"/4)"+")+"+this.actor.system.abilities.intelligence.mod+"+"+this.actor.system.abilities.strength.mod+"/4"+")*"+rollData.roll.diceBonus+")";
+          rollData.formula="((("+rollData.roll.dice+"/50*("+this.actor.system.abilities.intelligence.mod+"*(9/10)+"+"+"+this.actor.system.abilities.strength.mod+"*(3/10))"+")+"+this.actor.system.abilities.intelligence.mod+"+"+this.actor.system.abilities.strength.mod+"*(3/10)"+")*"+rollData.roll.diceBonus+")";
         }
         else {
           rollData.formula="(((1d20/100*"+rollData.roll.abilitymod+")+"+rollData.roll.abilitymod+")*"+rollData.roll.diceBonus+")";
@@ -145,29 +155,39 @@ export class AspectsofPowerItem extends Item {
       console.log("resource type:", rollData.roll.resource);
       console.log("test resource type:", rollData.roll.resourcevalue);
 
-      if (rollData.roll.resourcevalue >= rollData.roll.cost) {
+      if (rollData.roll.resourcevalue >= rollData.roll.cost) {        
         if (rollData.roll.type == "dex_weapon"){
-          rollData.formula="((((d20/100)*("+this.actor.system.abilities.dexterity.mod+"+"+this.actor.system.abilities.strength.mod+"*(3/10)))+"+this.actor.system.abilities.dexterity.mod+"+"+this.actor.system.abilities.strength.mod+"*(3/10)))";
+          rollData.formula="((((d20/100)*("+this.actor.system.abilities.dexterity.mod+"*(9/10)"+"+"+this.actor.system.abilities.strength.mod+"*(3/10)))+"+this.actor.system.abilities.dexterity.mod+"*(9/10)"+"+"+this.actor.system.abilities.strength.mod+"*(3/10)))";
           const roll = new Roll(rollData.formula, rollData);
           roll.toMessage({
             speaker: speaker,
             rollMode: rollMode,
             flavor: "To Hit",
           });
-          rollData.formula="((("+rollData.roll.dice+"/50*("+this.actor.system.abilities.strength.mod+"+"+rollData.roll.abilitymod+"/4)"+")+"+this.actor.system.abilities.strength.mod+"+"+rollData.roll.abilitymod+"/4"+")*"+rollData.roll.diceBonus+")";
+          rollData.formula="((("+rollData.roll.dice+"/50*("+this.actor.system.abilities.strength.mod+"*(9/10)"+"+"+this.actor.system.abilities.dexterity.mod+"*(3/10))"+")+"+this.actor.system.abilities.strength.mod+"+"+this.actor.system.abilities.dexterity.mod+"*(3/10)"+")*"+rollData.roll.diceBonus+")";
         }
         else if (rollData.roll.type == "str_weapon"){
-          rollData.formula="((((d20/100)*("+this.actor.system.abilities.strength.mod+"+"+this.actor.system.abilities.dexterity.mod+"*(3/10)))+"+this.actor.system.abilities.strength.mod+"+"+this.actor.system.abilities.dexterity.mod+"*(3/10)))";
+          rollData.formula="((((d20/100)*("+this.actor.system.abilities.strength.mod+"*(9/10)"+"+"+this.actor.system.abilities.dexterity.mod+"*(3/10)))+"+this.actor.system.abilities.strength.mod+"*(9/10)"+"+"+this.actor.system.abilities.dexterity.mod+"*(3/10)))";
           const roll = new Roll(rollData.formula, rollData);
           roll.toMessage({
             speaker: speaker,
             rollMode: rollMode,
             flavor: "To Hit",
           });
-          rollData.formula="(("+rollData.roll.dice+"/50*("+this.actor.system.abilities.strength.mod+")+"+this.actor.system.abilities.strength.mod+"+"+rollData.roll.abilitymod+"/4"+")*"+rollData.roll.diceBonus+")";
+          rollData.formula="(("+rollData.roll.dice+"/50*("+this.actor.system.abilities.strength.mod+")+"+this.actor.system.abilities.strength.mod+"+"+this.actor.system.abilities.strength.mod+"*(3/10)"+")*"+rollData.roll.diceBonus+")";
+        }
+        else if (rollData.roll.type == "phys_ranged"){
+          rollData.formula="((((d20/100)*("+this.actor.system.abilities.perception.mod+"*(9/10)"+"+"+this.actor.system.abilities.dexterity.mod+"*(3/10)))+"+this.actor.system.abilities.perception.mod+"*(9/10)"+"+"+this.actor.system.abilities.dexterity.mod+"*(3/10)))";
+          const roll = new Roll(rollData.formula, rollData);
+          roll.toMessage({
+            speaker: speaker,
+            rollMode: rollMode,
+            flavor: "To Hit",
+          });
+          rollData.formula="((("+rollData.roll.dice+"/50*("+this.actor.system.abilities.perception.mod+"*(9/10)"+"+"+this.actor.system.abilities.dexterity.mod+"*(3/10))"+")+"+this.actor.system.abilities.perception.mod+"*(9/10)"+"+"+this.actor.system.abilities.dexterity.mod+"*(3/10)"+")*"+rollData.roll.diceBonus+")";
         }
         else if (rollData.roll.type == "magic_projectile"){
-          rollData.formula="((((d20/100)*("+this.actor.system.abilities.intelligence.mod+"+"+this.actor.system.abilities.perception.mod+"*(3/10)))+"+this.actor.system.abilities.intelligence.mod+"+"+this.actor.system.abilities.perception.mod+"*(3/10)))";
+          rollData.formula="((((d20/100)*("+this.actor.system.abilities.intelligence.mod+"*(9/10)"+"+"+this.actor.system.abilities.perception.mod+"*(3/10)))+"+this.actor.system.abilities.intelligence.mod+"*(9/10)"+"+"+this.actor.system.abilities.perception.mod+"*(3/10)))";
           const roll = new Roll(rollData.formula, rollData);
           roll.toMessage({
             speaker: speaker,
@@ -177,14 +197,14 @@ export class AspectsofPowerItem extends Item {
           rollData.formula="((("+rollData.roll.dice+"/100*"+rollData.roll.abilitymod+")+"+rollData.roll.abilitymod+")*"+rollData.roll.diceBonus+")";
         }
         else if (rollData.roll.type == "magic_melee"){
-          rollData.formula="((((d20/100)*("+this.actor.system.abilities.intelligence.mod+"+"+this.actor.system.abilities.strength.mod+"*(3/10)))+"+this.actor.system.abilities.intelligence.mod+"+"+this.actor.system.abilities.strength.mod+"*(3/10)))";
+          rollData.formula="((((d20/100)*("+this.actor.system.abilities.intelligence.mod+"*(9/10)"+"+"+this.actor.system.abilities.strength.mod+"*(3/10)))+"+this.actor.system.abilities.intelligence.mod+"*(9/10)"+"+"+this.actor.system.abilities.strength.mod+"*(3/10)))";
           const roll = new Roll(rollData.formula, rollData);
           roll.toMessage({
             speaker: speaker,
             rollMode: rollMode,
             flavor: "To Hit",
           });
-          rollData.formula="((("+rollData.roll.dice+"/50*("+this.actor.system.abilities.intelligence.mod+"+"+this.actor.system.abilities.strength.mod+"/4)"+")+"+this.actor.system.abilities.intelligence.mod+"+"+this.actor.system.abilities.strength.mod+"/4"+")*"+rollData.roll.diceBonus+")";
+          rollData.formula="((("+rollData.roll.dice+"/50*("+this.actor.system.abilities.intelligence.mod+"*(9/10)+"+"+"+this.actor.system.abilities.strength.mod+"*(3/10))"+")+"+this.actor.system.abilities.intelligence.mod+"*(9/10)"+"+"+this.actor.system.abilities.strength.mod+"*(3/10)"+")*"+rollData.roll.diceBonus+")";
         }
         else 
           rollData.formula="((("+rollData.roll.dice+"/100*"+rollData.roll.abilitymod+")+"+rollData.roll.abilitymod+")*"+rollData.roll.diceBonus+")";
