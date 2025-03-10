@@ -696,6 +696,13 @@ class Character:
                 "endurance": 3,
                 "strength": 2,
                 "free_points": 4,
+            },
+            "blood warden": {
+                "vitality": 5,
+                "strength": 4,
+                "dexterity": 3,
+                "toughness": 2,
+                "free_points": 4,
             }
         }
 
