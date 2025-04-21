@@ -1,26 +1,26 @@
 Name,Class,Class level,Race,Race level,Race rank,Profession,Profession level,vitality,endurance,strength,dexterity,toughness,intelligence,willpower,wisdom,perception,vitality_modifier,endurance_modifier,strength_modifier,dexterity_modifier,toughness_modifier,intelligence_modifier,willpower_modifier,wisdom_modifier,perception_modifier,free_points,vitality_base,endurance_base,strength_base,dexterity_base,toughness_base,intelligence_base,willpower_base,wisdom_base,perception_base
-Aiden,Mage,21,Human,10,F,Uninitiated,0,15,15,15,28,35,77,57,36,36,21,21,21,21,21,81,81,51,51,0,,,,,,,,,
 Aliza Case,Swashbuckler,30,Human,15,F,Uninitiated,0,77,55,126,120,35,20,20,20,20,110,78,180,172,50,29,29,29,29,0,,,,,,,,,
 Philip Patton,Beginner Assassin,30,Human,15,F,Unitiated,0,54,78,97,146,20,20,20,20,38,77,111,139,209,29,29,29,29,54,0,,,,,,,,,
 Arjan Terry,Aspiring Blade of Light,30,Human,15,F,Uninitiated,0,115,55,126,74,43,20,20,20,20,165,78,180,105,61,29,29,29,29,0,,,,,,,,,
 Katrina Hodge,Knife Artist,30,Human,15,F,Uninitiated,0,61,78,64,166,20,20,20,20,44,87,111,91,239,29,29,29,29,63,0,,,,,,,,,
-Phil,Glade Guardian,40,Half-Asrai,27,F,vanguard of new growth,15,133,82,195,181,146,17,17,83,71,191,117,281,261,209,24,24,118,101,0,5,5,5,5,5,5,5,5,5
-Fei,Glamourweaver,40,Half-Asrai,28,F,seed of new life,17,94,25,17,46,73,105,192,272,92,134,36,24,65,104,150,277,394,131,0,5,5,5,5,5,5,5,5,5
-Khalid Holman,Spearman,32,Human,22,F,Beginner Smith of the Moonshadow,12,126,66,196,143,45,48,36,27,51,180,94,282,205,64,68,51,38,73,0,5,5,5,5,5,5,5,5,5
-Mary,Augur,52,Human,26,E,Uninitiated,0,322,61,33,33,73,57,385,398,72,469,87,47,47,104,81,563,582,103,0,5,5,5,5,5,5,5,5,5
-James Randolph,Monk,50,Human,25,E,Uninitiated,0,136,85,244,257,129,31,31,31,31,195,121,353,372,185,44,44,44,44,0,5,5,5,5,5,5,5,5,5
-Frida,Waywatcher,36,Human,25,E,Student Trapper of the Asrai,14,78,78,41,195,80,31,31,77,232,111,111,58,281,114,44,44,110,335,0,5,5,5,5,5,5,5,5,5
-Damien,Light Warrior,20,Human,20,F,beginner leatherworker of the cosmos,20,45,65,65,170,51,55,75,25,25,64,93,93,244,73,78,107,36,36,0,5,5,5,5,5,5,5,5,5
-Lincoln,Medium Warrior,13,Human,26,E,architect,40,57,146,237,226,33,79,77,42,33,81,209,343,327,47,113,110,60,47,0,5,5,5,5,5,5,5,5,5
-Felicia,Curse Eater,37,Human,28,E,Judge,19,120,61,51,159,37,37,175,117,213,172,87,73,228,53,53,252,167,307,0,5,5,5,5,5,5,5,5,5
-Bridget,Mage,10,Human,20,F,Chef for the Masses,30,33,76,88,135,25,49,50,45,135,47,108,126,193,36,70,71,64,193,0,5,5,5,5,5,5,5,5,5
-Bruce,Heavy Warrior,18,Human,28,E,Crusher,38,97,195,290,132,70,37,37,37,85,139,281,421,189,100,53,53,53,121,0,5,5,5,5,5,5,5,5,5
-Deanna,Light Warrior,15,Human,18,F,Pickpocket,22,50,75,60,151,23,23,23,23,102,71,107,85,217,33,33,33,33,146,0,5,5,5,5,5,5,5,5,5
-Rosaly,Healer,22,Human,27,E,Tailor of Ingenuity,33,35,35,35,203,35,57,168,174,157,50,50,50,293,50,81,242,250,225,0,5,5,5,5,5,5,5,5,5
-Harry Hess,Hydromancer,34,Human,21,F,Novice Tailor,8,78,26,26,64,26,175,158,57,85,111,37,37,91,37,252,227,81,121,0,5,5,5,5,5,5,5,5,5
-Mathilda Fry,Bloodmage,36,Human,18,F,Unitiated,0,104,23,23,34,23,174,113,94,46,149,33,33,48,33,250,162,134,65,0,5,5,5,5,5,5,5,5,5
-Amina Wright,Witch of Ages,40,Human,27,E,Beginner Jeweler of the Elements,14,112,35,35,117,35,175,211,178,72,160,50,50,167,50,252,304,256,103,0,5,5,5,5,5,5,5,5,5
-Valentine,Fireborne,32,Human,20,F,alchemist of flame's heart,8,76,25,25,25,49,170,139,78,69,108,36,36,36,70,244,199,111,98,0,5,5,5,5,5,5,5,5,5
-Woody,Overwatch,28,Human,22,F,student shaper of the asrai,16,56,68,54,181,32,27,75,53,236,80,97,77,261,46,38,107,75,341,0,5,5,5,5,5,5,5,5,5
-George,Blood Warden,35,human,40,E,"drums of war, andante",45,274,137,359,283,160,62,151,147,69,397,196,524,411,230,88,217,211,98,0,5,5,5,5,5,5,5,5,5
-Harvey McKay,Clergyman,46,human,29,E,Magistrate,13,167,93,39,80,54,72,242,283,72,240,133,55,114,77,103,350,411,103,0,5,5,5,5,5,5,5,5,5
+Aiden,windservant,40,Human,30,E,windlord's keeper,20,163,71,41,158,81,229,157,65,113,234,101,58,227,116,331,225,93,162,0,5,5,5,5,5,5,5,5,5
+Phil,Glade Guardian,48,Half-Asrai,31,F,vanguard of new growth,15,155,82,227,221,170,17,17,99,81,223,117,328,319,244,24,24,141,116,0,5,5,5,5,5,5,5,5,5
+Fei,Glamourweaver,48,Half-Asrai,32,F,seed of new life,17,94,25,17,46,89,137,216,343,93,134,36,24,65,127,196,312,500,133,0,5,5,5,5,5,5,5,5,5
+Khalid Holman,Spearman,42,Human,27,E,Beginner Smith of the Moonshadow,12,184,94,264,201,62,56,44,35,69,265,134,383,290,88,80,63,50,98,0,5,5,5,5,5,5,5,5,5
+James Randolph,Monk,61,Human,30,E,Uninitiated,0,188,95,298,342,172,41,41,61,50,271,136,433,498,247,58,58,87,71,0,5,5,5,5,5,5,5,5,5
+Frida,Waywatcher,45,Human,29,E,Student Trapper of the Asrai,14,86,107,49,240,106,39,39,112,319,123,153,70,347,152,55,55,160,464,0,5,5,5,5,5,5,5,5,5
+Damien,Light Warrior,20,Human,25,E,Student Leatherworker of the Cosmos,30,51,71,93,244,57,77,118,41,31,73,101,133,353,81,110,169,58,44,0,5,5,5,5,5,5,5,5,5
+Rosaly,Healer,22,Human,32,E,Tailor of Ingenuity,42,76,45,45,268,45,67,206,221,203,108,64,64,389,64,95,297,319,293,0,5,5,5,5,5,5,5,5,5
+Lincoln,Medium Warrior,13,Human,30,E,architect,48,77,178,305,286,41,87,101,50,41,110,256,443,415,58,124,144,71,58,0,5,5,5,5,5,5,5,5,5
+Felicia,Curse Eater,47,Human,34,E,Judge,22,182,83,63,211,49,49,247,139,289,262,118,90,304,70,70,358,199,420,0,5,5,5,5,5,5,5,5,5
+Bridget,Mage,10,Human,26,E,Chef for the Masses,42,41,128,142,201,33,57,61,68,211,58,183,204,290,47,81,87,97,304,0,5,5,5,5,5,5,5,5,5
+Bruce,Heavy Warrior,18,Human,33,E,Crusher,48,112,251,414,182,80,47,47,47,95,160,363,606,262,114,67,67,67,136,0,5,5,5,5,5,5,5,5,5
+Harry Hess,Hydromancer,44,Human,26,E,Novice Tailor,8,116,33,33,71,33,242,215,99,112,166,47,47,101,47,350,310,141,160,0,5,5,5,5,5,5,5,5,5
+Deanna,Light Warrior,15,Human,23,F,Thief,32,55,116,83,226,28,28,28,28,153,78,166,118,327,40,40,40,40,220,0,5,5,5,5,5,5,5,5,5
+Mathilda Fry,Bloodmage,45,Human,22,F,Unitiated,0,145,27,27,38,27,233,145,144,54,208,38,38,54,38,337,208,207,77,0,5,5,5,5,5,5,5,5,5
+Amina Wright,Witch of Ages,46,Human,33,E,Beginner Jeweler of the Elements,20,142,47,47,162,47,216,273,240,90,204,67,67,233,67,312,396,347,128,0,5,5,5,5,5,5,5,5,5
+Valentine,Fireborne,42,Human,27,E,alchemist of flame's heart,13,126,35,35,35,79,245,204,98,132,180,50,50,50,113,355,294,140,189,0,5,5,5,5,5,5,5,5,5
+Woody,Overwatch,39,Human,29,E,student shaper of the asrai,20,68,113,88,265,44,39,100,71,361,97,162,126,384,63,55,143,101,527,0,5,5,5,5,5,5,5,5,5
+George,Blood Warden,40,human,42,E,"drums of war, andante",45,313,141,403,302,174,66,155,151,73,455,202,590,439,250,94,223,217,104,0,5,5,5,5,5,5,5,5,5
+Harvey McKay,Clergyman,50,human,31,E,Magistrate,13,193,105,43,84,58,76,272,313,76,278,150,61,120,83,108,394,455,108,0,5,5,5,5,5,5,5,5,5
+Mary,Augur,55,Human,27,E,Uninitiated,0,356,73,35,35,75,59,421,424,75,519,104,50,50,107,84,617,621,107,0,5,5,5,5,5,5,5,5,5

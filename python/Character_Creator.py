@@ -703,6 +703,27 @@ class Character:
                 "dexterity": 3,
                 "toughness": 2,
                 "free_points": 4,
+            },
+            "windservant": {
+                "intelligence": 5,
+                "dexterity": 4,
+                "willpower": 3,
+                "vitality": 2,
+                "free_points": 4,
+            },
+            "ice maiden": {
+                "intelligence": 5,
+                "willpower": 4,
+                "wisdom": 3,
+                "dexterity": 2,
+                "free_points": 4,
+            },
+            "paramedic": {
+                "wisdom": 5,
+                "willpower": 4,
+                "dexterity": 3,
+                "vitality": 2,
+                "free_points": 4,
             }
         }
 
@@ -997,7 +1018,7 @@ class Character:
             "thief": {
                 "dexterity": 5,
                 "perception": 4,
-                "endruance": 3,
+                "endurance": 3,
                 "strength": 2,
                 "free_points": 4,
             },
@@ -1020,6 +1041,13 @@ class Character:
                 "dexterity": 4,
                 "willpower": 3,
                 "wisdom": 2,
+                "free_points": 4,
+            },
+            "student leatherworker of the cosmos": {
+                "dexterity": 5,
+                "willpower": 4,
+                "strength": 3,
+                "intelligence": 2,
                 "free_points": 4,
             }
             
