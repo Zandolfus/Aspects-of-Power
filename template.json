@@ -72,6 +72,9 @@
         "armor": {
           "value": 0
         },
+        "veil": {
+          "value": 0
+        },
         "melee": {
           "value": 0
         },
