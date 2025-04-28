@@ -724,6 +724,13 @@ class Character:
                 "dexterity": 3,
                 "vitality": 2,
                 "free_points": 4,
+            },
+            "treewalker": {
+                "perception": 5,
+                "dexterity": 4,
+                "endurance": 3,
+                "vitality": 2,
+                "free_points": 4,
             }
         }
 
@@ -991,6 +998,27 @@ class Character:
                 "willpower": 1,
                 "wisdom": 1,
                 "free_points": 2,
+            },
+            "drums of war, largo": {
+                "strength": 2,
+                "dexterity": 2,
+                "willpower": 1,
+                "wisdom": 1,
+                "free_points": 2,
+            },
+            "novice witch-wright of iron and ice": {
+                "intelligence": 2,
+                "wisdom": 2,
+                "willpower": 1,
+                "vitality": 1,
+                "free_points": 2,
+            },
+            "beast-speaker": {
+                "vitality": 2,
+                "wisdom": 2,
+                "endurance": 1,
+                "dexterity": 1,
+                "free_points": 2,
             }
         }
 
@@ -999,7 +1027,7 @@ class Character:
                 "strength": 8,
                 "dexterity": 4,
                 "endurance": 4,
-                "free_points": 2,
+                "free_points": 4,
             },
             "chef for the masses": {
                 "perception": 5,
@@ -1049,8 +1077,21 @@ class Character:
                 "strength": 3,
                 "intelligence": 2,
                 "free_points": 4,
+            },
+            "witch-wright of iron and ice": {
+                "intelligence": 5,
+                "wisdom": 4,
+                "willpower": 3,
+                "vitality": 2,
+                "free_points": 4,
+            },
+            "beast-tamer": {
+                "vitality": 5,
+                "wisdom": 4,
+                "endurance": 3,
+                "dexterity": 2,
+                "free_points": 4,
             }
-            
         }
 
         # Apply stat gains based on current level and profession
