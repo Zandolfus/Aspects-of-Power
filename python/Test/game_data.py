@@ -1,0 +1,488 @@
+"""
+Game data file that would be imported by the Character Creator.
+This contains the data dictionaries for classes, professions, and races.
+"""
+
+# Class-specific stat gains for tier 1 classes (levels 1-24)
+tier1_class_gains = {
+    "mage": {
+        "intelligence": 2,
+        "willpower": 2,
+        "wisdom": 1,
+        "perception": 1,
+        "free_points": 2,
+    },
+    "healer": {
+        "willpower": 2,
+        "wisdom": 2,
+        "intelligence": 1,
+        "perception": 1,
+        "free_points": 2,
+    },
+    "archer": {
+        "perception": 2,
+        "dexterity": 2,
+        "endurance": 1,
+        "vitality": 1,
+        "free_points": 2,
+    },
+    "heavy warrior": {
+        "strength": 2,
+        "vitality": 2,
+        "endurance": 1,
+        "toughness": 1,
+        "free_points": 2,
+    },
+    "medium warrior": {
+        "strength": 2,
+        "dexterity": 2,
+        "endurance": 1,
+        "vitality": 1,
+        "free_points": 2,
+    },
+    "light warrior": {
+        "dexterity": 2,
+        "endurance": 2,
+        "vitality": 1,
+        "strength": 1,
+        "free_points": 2,
+    },
+}
+
+# Class-specific stat gains for tier 2 classes (levels 25+)
+tier2_class_gains = {
+    "thunder puppet's shadow": {
+        "dexterity": 5,
+        "strength": 4,
+        "vitality": 3,
+        "endurance": 2,
+        "free_points": 4,
+    },
+    "glamourweaver": {
+        "wisdom": 5,
+        "intelligence": 4,
+        "willpower": 3,
+        "toughness": 2,
+        "free_points": 4,
+    },
+    "waywatcher": {
+        "perception": 5,
+        "dexterity": 4,
+        "wisdom": 3,
+        "toughness": 2,
+        "free_points": 4,
+    },
+    "glade guardian": {
+        "dexterity": 5,
+        "strength": 4,
+        "toughness": 3,
+        "wisdom": 2,
+        "free_points": 4,
+    },
+    "sniper": {
+        "perception": 5,
+        "dexterity": 4,
+        "endurance": 3,
+        "toughness": 2,
+        "free_points": 4,
+    },
+    "augur": {"wisdom": 8, "willpower": 8, "vitality": 8, "free_points": 8},
+    "monk": {
+        "dexterity": 5,
+        "strength": 4,
+        "toughness": 3,
+        "vitality": 2,
+        "free_points": 4,
+    },
+    "spearman": {
+        "strength": 5,
+        "dexterity": 4,
+        "vitality": 3,
+        "endurance": 2,
+        "free_points": 4,
+    },
+    "knife artist": {
+        "dexterity": 5,
+        "perception": 4,
+        "vitality": 3,
+        "endurance": 2,
+        "free_points": 4,
+    },
+    "bloodmage": {
+        "intelligence": 5,
+        "wisdom": 4,
+        "vitality": 3,
+        "willpower": 2,
+        "free_points": 4,
+    },
+    "aspiring blade of light": {
+        "strength": 5,
+        "dexterity": 4,
+        "vitality": 3,
+        "endurance": 2,
+        "free_points": 4,
+    },
+    "beginner assassin": {
+        "dexterity": 5,
+        "strength": 4,
+        "perception": 3,
+        "endurance": 2,
+        "free_points": 4,
+    },
+    "hydromancer": {
+        "intelligence": 5,
+        "willpower": 4,
+        "vitality": 3,
+        "perception": 2,
+        "free_points": 4,
+    },
+    "clergyman": {
+        "wisdom": 5,
+        "willpower": 4,
+        "vitality": 3,
+        "endurance": 2,
+        "free_points": 4,
+    },
+    "swashbuckler": {
+        "strength": 5,
+        "dexterity": 4,
+        "vitality": 3,
+        "endurance": 2,
+        "free_points": 4,
+    },
+    "witch of ages": {
+        "willpower": 5,
+        "intelligence": 4,
+        "wisdom": 3,
+        "vitality": 2,
+        "free_points": 4,
+    },
+    "curse eater": {
+        "willpower": 5,
+        "perception": 4,
+        "vitality": 3,
+        "dexterity": 2,
+        "free_points": 4,
+    },
+    "fireborne": {
+        "intelligence": 5,
+        "willpower": 4,
+        "vitality": 3,
+        "toughness": 2,
+        "free_points": 4,
+    },
+    "windcaller": {
+        "intelligence": 5,
+        "perception": 4,
+        "wisdom": 3,
+        "willpower": 2,
+        "free_points": 4,
+    },
+    "overwatch": {
+        "perception": 5,
+        "dexterity": 4,
+        "endurance": 3,
+        "strength": 2,
+        "free_points": 4,
+    },
+}
+
+# Profession-specific stat gains for tier 1 professions (levels 1-24)
+tier1_profession_gains = {
+    "beginner jeweler of the elements": {
+        "wisdom": 2,
+        "dexterity": 2,
+        "vitality": 1,
+        "perception": 1,
+        "free_points": 2,
+    },
+    "beginner smith of the moonshadow": {
+        "strength": 2,
+        "perception": 2,
+        "vitality": 1,
+        "intelligence": 1,
+        "free_points": 2,
+    },
+    "justiciar": {"free_points": 8},
+    "judge": {"free_points": 8},
+    "magistrate": {"free_points": 8},
+    "gatherer": {
+        "strength": 2,
+        "perception": 2,
+        "dexterity": 1,
+        "endurance": 1,
+        "free_points": 2,
+    },
+    "chef": {
+        "dexterity": 2,
+        "perception": 2,
+        "strength": 1,
+        "endurance": 1,
+        "free_points": 2,
+    },
+    "student trapper of the asrai": {
+        "perception": 2,
+        "dexterity": 2,
+        "vitality": 1,
+        "endurance": 1,
+        "free_points": 2,
+    },
+    "pickpocket": {
+        "perception": 2,
+        "dexterity": 2,
+        "strength": 1,
+        "endurance": 1,
+        "free_points": 2,
+    },
+    "novice tailor": {
+        "dexterity": 2,
+        "perception": 2,
+        "wisdom": 1,
+        "willpower": 1,
+        "free_points": 2,
+    },
+    "builder": {
+        "strength": 2,
+        "dexterity": 2,
+        "endurance": 1,
+        "intelligence": 1,
+        "free_points": 2,
+    },
+    "windlord's keeper": {
+        "intelligence": 2,
+        "dexterity": 2,
+        "willpower": 1,
+        "toughness": 1,
+        "free_points": 2,
+    },
+    "beginner leatherworker of the cosmos": {
+        "dexterity": 2,
+        "willpower": 2,
+        "strength": 1,
+        "intelligence": 1,
+        "free_points": 2,
+    },
+    "seed of new life": {
+        "willpower": 2,
+        "wisdom": 2,
+        "perception": 1,
+        "vitality": 1,
+        "free_points": 2,
+    },
+    "vanguard of new growth": {
+        "perception": 2,
+        "vitality": 2,
+        "strength": 1,
+        "toughness": 1,
+        "free_points": 2,
+    },
+    "student shaper of the asrai": {
+        "dexterity": 2,
+        "perception": 2,
+        "willpower": 1,
+        "wisdom": 1,
+        "free_points": 2,
+    },
+    "alchemist of flame's heart": {
+        "wisdom": 2,
+        "perception": 2,
+        "willpower": 1,
+        "intelligence": 1,
+        "free_points": 2,
+    },
+    "drums of war, largo": {
+        "strength": 2,
+        "dexterity": 2,
+        "willpower": 1,
+        "wisdom": 1,
+        "free_points": 2,
+    },
+}
+
+# Profession-specific stat gains for tier 2 professions (levels 25+)
+tier2_profession_gains = {
+    "crusher": {
+        "strength": 8,
+        "dexterity": 4,
+        "endurance": 4,
+        "free_points": 2,
+    },
+    "chef for the masses": {
+        "perception": 5,
+        "dexterity": 4,
+        "strength": 3,
+        "endurance": 2,
+        "free_points": 4,
+    },
+    "beginner trapper of the asrai": {
+        "perception": 5,
+        "dexterity": 4,
+        "vitality": 3,
+        "endurance": 2,
+        "free_points": 4,
+    },
+    "thief": {
+        "dexterity": 5,
+        "perception": 4,
+        "endruance": 3,
+        "strength": 2,
+        "free_points": 4,
+    },
+    "tailor of ingenuity": {
+        "dexterity": 5,
+        "perception": 4,
+        "wisdom": 3,
+        "willpower": 2,
+        "free_points": 4,
+    },
+    "architect": {
+        "strength": 5,
+        "dexterity": 4,
+        "endurance": 3,
+        "willpower": 2,
+        "free_points": 4,
+    },
+    "drums of war, andante": {
+        "strength": 5,
+        "dexterity": 4,
+        "willpower": 3,
+        "wisdom": 2,
+        "free_points": 4,
+    },
+}
+
+# Race-specific stat gains and ranks
+races = {
+    "human": {
+        "rank_ranges": [
+            {
+                "min_level": 0,
+                "max_level": 9,
+                "stats": {
+                    "dexterity": 1,
+                    "strength": 1,
+                    "vitality": 1,
+                    "endurance": 1,
+                    "toughness": 1,
+                    "willpower": 1,
+                    "wisdom": 1,
+                    "intelligence": 1,
+                    "perception": 1,
+                    "free_points": 1,
+                },
+                "rank": "G",
+            },
+            {
+                "min_level": 10,
+                "max_level": 24,
+                "stats": {
+                    "dexterity": 1,
+                    "strength": 1,
+                    "vitality": 1,
+                    "endurance": 1,
+                    "toughness": 1,
+                    "willpower": 1,
+                    "wisdom": 1,
+                    "intelligence": 1,
+                    "perception": 1,
+                    "free_points": 2,
+                },
+                "rank": "F",
+            },
+            {
+                "min_level": 25,
+                "max_level": 99,
+                "stats": {
+                    "dexterity": 2,
+                    "strength": 2,
+                    "vitality": 2,
+                    "endurance": 2,
+                    "toughness": 2,
+                    "willpower": 2,
+                    "wisdom": 2,
+                    "intelligence": 2,
+                    "perception": 2,
+                    "free_points": 5,
+                },
+                "rank": "E",
+            },
+            {
+                "min_level": 100,
+                "max_level": 1000,  # Use a high upper bound for the top level
+                "stats": {
+                    "dexterity": 6,
+                    "strength": 6,
+                    "vitality": 6,
+                    "endurance": 6,
+                    "toughness": 6,
+                    "willpower": 6,
+                    "wisdom": 6,
+                    "intelligence": 6,
+                    "perception": 6,
+                    "free_points": 15,
+                },
+                "rank": "D",
+            },
+        ]
+    },
+    "half-asrai": {
+        "rank_ranges": [
+            {
+                "min_level": 0,
+                "max_level": 9,
+                "stats": {
+                    "dexterity": 2,
+                    "toughness": 2,
+                    "wisdom": 2,
+                    "perception": 2,
+                    "free_points": 2,
+                },
+                "rank": "G",
+            },
+            {
+                "min_level": 10,
+                "max_level": 24,
+                "stats": {
+                    "dexterity": 2,
+                    "toughness": 2,
+                    "wisdom": 2,
+                    "perception": 2,
+                    "free_points": 3,
+                },
+                "rank": "F",
+            },
+        ]
+    },
+    "asrai": {
+        "rank_ranges": [
+            {
+                "min_level": 0,
+                "max_level": 24,
+                "stats": {
+                    "dexterity": 3,
+                    "toughness": 2,
+                    "wisdom": 2,
+                    "perception": 2,
+                    "vitality": 2,
+                },
+                "rank": "F",
+            }
+        ]
+    },
+    "monster": {
+        "rank_ranges": [
+            {
+                "min_level": 0,
+                "max_level": 24,
+                "stats": {"free_points": 42},
+                "rank": "F",
+            },
+            {
+                "min_level": 25,
+                "max_level": 99,
+                "stats": {"free_points": 63},
+                "rank": "E",
+            },
+        ]
+    },
+}
