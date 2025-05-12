@@ -100,7 +100,7 @@ def print_main_menu(character: Optional[Character] = None):
     clear_screen()
     
     if character is None:
-        print_header("Welcome to the Enhanced Character Creator")
+        print_header("Welcome to the AoP Character Creator")
         print("1. Create a new character")
         print("2. Load a character")
         print("0. Exit")
@@ -1454,7 +1454,7 @@ def main():
             elif choice == '2':
                 character, save_file = load_character(item_repository)
             elif choice == '0':
-                print_success("Thank you for using the Enhanced Character Creator!")
+                print_success("Thank you for using the AoP Character Creator!")
                 sys.exit(0)
             else:
                 print_error("Invalid choice.")
@@ -1490,7 +1490,7 @@ def main():
             elif choice == '0':
                 if character and confirm_action("Do you want to save before exiting?"):
                     save_character(character, save_file)
-                print_success("Thank you for using the Enhanced Character Creator!")
+                print_success("Thank you for using the AoP Character Creator!")
                 sys.exit(0)
             else:
                 print_error("Invalid choice.")
