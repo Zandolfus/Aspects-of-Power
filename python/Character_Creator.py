@@ -1019,6 +1019,13 @@ class Character:
                 "endurance": 1,
                 "dexterity": 1,
                 "free_points": 2,
+            },
+            "student blood alchemist": {
+                "wisdom": 2,
+                "vitality": 2,
+                "willpower": 1,
+                "perception": 1,
+                "free_points": 2,
             }
         }
 
@@ -1091,6 +1098,30 @@ class Character:
                 "endurance": 3,
                 "dexterity": 2,
                 "free_points": 4,
+            },
+            "windlord's bonded": {
+                "intelligence": 5,
+                "dexterity": 4,
+                "willpower": 3,
+                "toughness": 2,
+                "free_points": 4,
+            },
+            "true vanguard of new growth": {
+                "perception": 2,
+                "vitality": 2,
+                "strength": 1,
+                "toughness": 1,
+                "free_points": 2,
+            },
+            "sapling of new life": {
+                "willpower": 5,
+                "wisdom": 4,
+                "perception": 3,
+                "vitality": 2,
+                "free_points": 4,
+            },
+            "high judge": {
+                "free_points": 18,
             }
         }
 
