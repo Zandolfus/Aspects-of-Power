@@ -1026,6 +1026,9 @@ class Character:
                 "willpower": 1,
                 "perception": 1,
                 "free_points": 2,
+            },
+            "advocate": {
+                "free_points": 8,
             }
         }
 
