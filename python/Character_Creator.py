@@ -1043,7 +1043,7 @@ class Character:
                 "endurance": 2,
                 "free_points": 4,
             },
-            "beginner trapper of the asrai": {
+            "trapper of the asrai": {
                 "perception": 5,
                 "dexterity": 4,
                 "vitality": 3,
@@ -1107,11 +1107,11 @@ class Character:
                 "free_points": 4,
             },
             "true vanguard of new growth": {
-                "perception": 2,
-                "vitality": 2,
-                "strength": 1,
-                "toughness": 1,
-                "free_points": 2,
+                "perception": 5,
+                "vitality": 4,
+                "strength": 3,
+                "toughness": 2,
+                "free_points": 4,
             },
             "sapling of new life": {
                 "willpower": 5,
@@ -1122,6 +1122,34 @@ class Character:
             },
             "high judge": {
                 "free_points": 18,
+            },
+            "blazing alchemist of flame's heart": {
+                "wisdom": 5,
+                "perception": 4,
+                "willpower": 3,
+                "intelligence": 2,
+                "free_points": 4,
+            },
+            "proficient smith of the moonshadow": {
+                "strength": 5,
+                "perception": 4,
+                "vitality": 3,
+                "intelligence": 2,
+                "free_points": 4,
+            },
+            "witch-wright of jewels": {
+                "wisdom": 5,
+                "willpower": 4,
+                "intelligence": 3,
+                "perception": 2,
+                "free_points": 4,
+            },
+            "shaper of the asrai": {
+                "dexterity": 5,
+                "perception": 4,
+                "willpower": 3,
+                "wisdom": 2,
+                "free_points": 4,
             }
         }
 
