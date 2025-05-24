@@ -731,6 +731,13 @@ class Character:
                 "endurance": 3,
                 "vitality": 2,
                 "free_points": 4,
+            },
+            "triage healer": {
+                "wisdom": 5,
+                "willpower": 4,
+                "perception": 3,
+                "endurance": 2,
+                "free_points": 4,
             }
         }
 
