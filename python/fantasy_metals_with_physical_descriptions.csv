@@ -1,0 +1,101 @@
+Name,Hardness,Elemental Affinity,Quality,Description,Crafting Bonus
+Iron,50,None,Common,"A sturdy but unremarkable metal, it .",No notable bonuses.
+Steel,120,None,Common,"A sturdy but unremarkable metal, it .",No notable bonuses.
+Bronze,60,Fire,Common,"A sturdy but unremarkable metal, it shimmers with a faint ember glow.",Adds burn damage to weapons
+Silver,40,"Holy, Lunar",Uncommon,"A distinctive metal favored by artisans, it glows softly with a golden-white aura.",Effective against undead or demonic foes
+Gold,25,"Solar, Arcane",Uncommon,"A distinctive metal favored by artisans, it is etched with shifting, glowing runes.",Boosts magical enchantments
+Mithril,950,"Air, Arcane",Rare,"A prized metal sought for its unique properties, it has a silvery sheen that seems to blur at the edges, andis etched with shifting, glowing runes.",Reduces weight of equipment; Boosts magical enchantments
+Adamantite,1400,"Earth, Force",Rare,"A prized metal sought for its unique properties, it appears dense and grainy with a stone-like luster, andfeels unnaturally dense and hums faintly on touch.",Increases durability and defense; Grants resistance to kinetic impact
+Orichalcum,1250,"Fire, Lightning",Rare,"A prized metal sought for its unique properties, it shimmers with a faint ember glow, andcrackles faintly with static energy.",Adds burn damage to weapons; Improves speed or reaction time
+Obsidian,90,"Fire, Shadow",Uncommon,"A distinctive metal favored by artisans, it shimmers with a faint ember glow, andabsorbs light, casting a dim aura around it.",Adds burn damage to weapons; Improves stealth or concealment
+Lead,20,Necrotic,Common,"A sturdy but unremarkable metal, it has dark veins pulsing through its surface.",Drains vitality or weakens enemies
+Copper,35,Lightning,Common,"A sturdy but unremarkable metal, it crackles faintly with static energy.",Improves speed or reaction time
+Tin,30,None,Common,"A sturdy but unremarkable metal, it .",No notable bonuses.
+Brass,70,Fire,Uncommon,"A distinctive metal favored by artisans, it shimmers with a faint ember glow.",Adds burn damage to weapons
+Electrum,45,Lightning,Uncommon,"A distinctive metal favored by artisans, it crackles faintly with static energy.",Improves speed or reaction time
+Nickel,80,Earth,Common,"A sturdy but unremarkable metal, it appears dense and grainy with a stone-like luster.",Increases durability and defense
+Zinc,30,Air,Common,"A sturdy but unremarkable metal, it has a silvery sheen that seems to blur at the edges.",Reduces weight of equipment
+Cobalt,200,Magnetic,Uncommon,"A distinctive metal favored by artisans, it pulls gently toward metal and tingles when held.",Affects mechanical or metallic constructs
+Tungsten,400,Fire,Uncommon,"A distinctive metal favored by artisans, it shimmers with a faint ember glow.",Adds burn damage to weapons
+Titanium,500,"Air, Force",Uncommon,"A distinctive metal favored by artisans, it has a silvery sheen that seems to blur at the edges, andfeels unnaturally dense and hums faintly on touch.",Reduces weight of equipment; Grants resistance to kinetic impact
+Platinum,60,Arcane,Uncommon,"A distinctive metal favored by artisans, it is etched with shifting, glowing runes.",Boosts magical enchantments
+GloomMetal,1178,Air,Common,"A sturdy but unremarkable metal, it has a silvery sheen that seems to blur at the edges.",Reduces weight of equipment
+EchoShard,1117,Shadow,Very Rare,"An exceptional and coveted metal used by master crafters, it absorbs light, casting a dim aura around it.",Improves stealth or concealment
+VerdantIron,651,Water,Uncommon,"A distinctive metal favored by artisans, it feels slick to the touch and glistens like dew.",Improves fluidity or regeneration
+GhostCrystal,1195,Lightning,Rare,"A prized metal sought for its unique properties, it crackles faintly with static energy.",Improves speed or reaction time
+SkyShard,755,Lightning,Uncommon,"A distinctive metal favored by artisans, it crackles faintly with static energy.",Improves speed or reaction time
+AshenGlass,517,"Fire, Nature",Common,"A sturdy but unremarkable metal, it shimmers with a faint ember glow, andhas mossy green flecks that pulse with vitality.",Adds burn damage to weapons; Improves healing or synergy with living things
+SteelIron,407,"Fire, Holy",Uncommon,"A distinctive metal favored by artisans, it shimmers with a faint ember glow, andglows softly with a golden-white aura.",Adds burn damage to weapons; Effective against undead or demonic foes
+VoidCrystal,365,Shadow,Common,"A sturdy but unremarkable metal, it absorbs light, casting a dim aura around it.",Improves stealth or concealment
+MistOre,1032,"Ice, Earth",Uncommon,"A distinctive metal favored by artisans, it has a frosted, crystalline surface, andappears dense and grainy with a stone-like luster.",Applies chill/freeze effects; Increases durability and defense
+CoalBronze,786,"Force, Nature",Rare,"A prized metal sought for its unique properties, it has mossy green flecks that pulse with vitality, andfeels unnaturally dense and hums faintly on touch.",Improves healing or synergy with living things; Grants resistance to kinetic impact
+StormShard,999,"Necrotic, Lightning",Rare,"A prized metal sought for its unique properties, it crackles faintly with static energy, andhas dark veins pulsing through its surface.",Improves speed or reaction time; Drains vitality or weakens enemies
+NightCrystal,1367,"Fire, Earth",Uncommon,"A distinctive metal favored by artisans, it shimmers with a faint ember glow, andappears dense and grainy with a stone-like luster.",Adds burn damage to weapons; Increases durability and defense
+FlameShard,1267,Psychic,Uncommon,"A distinctive metal favored by artisans, it has a smooth, mirrored surface that distorts reflection.",Enhances mental control or perception
+GraveCrystal,880,"Magnetic, Arcane",Very Rare,"An exceptional and coveted metal used by master crafters, it is etched with shifting, glowing runes, andpulls gently toward metal and tingles when held.",Boosts magical enchantments; Affects mechanical or metallic constructs
+IronMetal,762,"Fire, Earth",Rare,"A prized metal sought for its unique properties, it shimmers with a faint ember glow, andappears dense and grainy with a stone-like luster.",Adds burn damage to weapons; Increases durability and defense
+StormIron,429,Fire,Uncommon,"A distinctive metal favored by artisans, it shimmers with a faint ember glow.",Adds burn damage to weapons
+StormAlloy,1120,"Radiant, Force",Uncommon,"A distinctive metal favored by artisans, it glows softly with a golden-white aura, andfeels unnaturally dense and hums faintly on touch.",Effective against undead or demonic foes; Grants resistance to kinetic impact
+SkyMetal,1098,Fire,Common,"A sturdy but unremarkable metal, it shimmers with a faint ember glow.",Adds burn damage to weapons
+DuskweldOre,917,Shadow,Rare,"A prized metal sought for its unique properties, it absorbs light, casting a dim aura around it.",Improves stealth or concealment
+GreenOre,319,"Lightning, Nature",Rare,"A prized metal sought for its unique properties, it crackles faintly with static energy, andhas mossy green flecks that pulse with vitality.",Improves speed or reaction time; Improves healing or synergy with living things
+GhostBronze,473,Fire,Uncommon,"A distinctive metal favored by artisans, it shimmers with a faint ember glow.",Adds burn damage to weapons
+BloodOre,1333,Magnetic,Uncommon,"A distinctive metal favored by artisans, it pulls gently toward metal and tingles when held.",Affects mechanical or metallic constructs
+VerdantFerrite,152,Magnetic,Uncommon,"A distinctive metal favored by artisans, it pulls gently toward metal and tingles when held.",Affects mechanical or metallic constructs
+GreenAlloy,1114,Radiant,Uncommon,"A distinctive metal favored by artisans, it glows softly with a golden-white aura.",Effective against undead or demonic foes
+BrightSteel,685,Ice,Common,"A sturdy but unremarkable metal, it has a frosted, crystalline surface.",Applies chill/freeze effects
+FrostAlloy,736,"Psychic, Poison",Common,"A sturdy but unremarkable metal, it has a smooth, mirrored surface that distorts reflection, andexudes a faint, oily sheen with a sickly tint.",Enhances mental control or perception; Applies toxin effects to weapons
+StormSteel,664,"Ice, Lightning",Uncommon,"A distinctive metal favored by artisans, it has a frosted, crystalline surface, andcrackles faintly with static energy.",Applies chill/freeze effects; Improves speed or reaction time
+AshenFerrite,1419,Poison,Common,"A sturdy but unremarkable metal, it exudes a faint, oily sheen with a sickly tint.",Applies toxin effects to weapons
+GhostGlass,752,Shadow,Common,"A sturdy but unremarkable metal, it absorbs light, casting a dim aura around it.",Improves stealth or concealment
+BloodFerrite,704,"Radiant, Force",Uncommon,"A distinctive metal favored by artisans, it glows softly with a golden-white aura, andfeels unnaturally dense and hums faintly on touch.",Effective against undead or demonic foes; Grants resistance to kinetic impact
+StormFerrite,853,Force,Uncommon,"A distinctive metal favored by artisans, it feels unnaturally dense and hums faintly on touch.",Grants resistance to kinetic impact
+BitterIron,1036,Force,Rare,"A prized metal sought for its unique properties, it feels unnaturally dense and hums faintly on touch.",Grants resistance to kinetic impact
+CloudFerrite,1181,Water,Rare,"A prized metal sought for its unique properties, it feels slick to the touch and glistens like dew.",Improves fluidity or regeneration
+CoalAlloy,353,Poison,Very Rare,"An exceptional and coveted metal used by master crafters, it exudes a faint, oily sheen with a sickly tint.",Applies toxin effects to weapons
+VoidSteel,1141,Earth,Uncommon,"A distinctive metal favored by artisans, it appears dense and grainy with a stone-like luster.",Increases durability and defense
+SkyCrystal,577,"Earth, Ice",Rare,"A prized metal sought for its unique properties, it has a frosted, crystalline surface, andappears dense and grainy with a stone-like luster.",Applies chill/freeze effects; Increases durability and defense
+FlameMetal,1342,Magnetic,Uncommon,"A distinctive metal favored by artisans, it pulls gently toward metal and tingles when held.",Affects mechanical or metallic constructs
+OreOre,876,"Force, Necrotic",Uncommon,"A distinctive metal favored by artisans, it has dark veins pulsing through its surface, andfeels unnaturally dense and hums faintly on touch.",Drains vitality or weakens enemies; Grants resistance to kinetic impact
+EchoSteel,1317,Force,Uncommon,"A distinctive metal favored by artisans, it feels unnaturally dense and hums faintly on touch.",Grants resistance to kinetic impact
+BlueIron,1446,Radiant,Uncommon,"A distinctive metal favored by artisans, it glows softly with a golden-white aura.",Effective against undead or demonic foes
+BitterOre,1127,"Water, Air",Very Rare,"An exceptional and coveted metal used by master crafters, it feels slick to the touch and glistens like dew, andhas a silvery sheen that seems to blur at the edges.",Reduces weight of equipment; Improves fluidity or regeneration
+RockOre,355,"Arcane, Air",Uncommon,"A distinctive metal favored by artisans, it has a silvery sheen that seems to blur at the edges, andis etched with shifting, glowing runes.",Reduces weight of equipment; Boosts magical enchantments
+AshenIron,492,Shadow,Common,"A sturdy but unremarkable metal, it absorbs light, casting a dim aura around it.",Improves stealth or concealment
+OreGlass,332,"Holy, Force",Common,"A sturdy but unremarkable metal, it glows softly with a golden-white aura, andfeels unnaturally dense and hums faintly on touch.",Effective against undead or demonic foes; Grants resistance to kinetic impact
+GloomFerrite,382,Lightning,Rare,"A prized metal sought for its unique properties, it crackles faintly with static energy.",Improves speed or reaction time
+EchoAlloy,1293,Necrotic,Uncommon,"A distinctive metal favored by artisans, it has dark veins pulsing through its surface.",Drains vitality or weakens enemies
+MistFerrite,175,"Nature, Earth",Very Rare,"An exceptional and coveted metal used by master crafters, it appears dense and grainy with a stone-like luster, andhas mossy green flecks that pulse with vitality.",Increases durability and defense; Improves healing or synergy with living things
+GreenSteel,138,Arcane,Very Rare,"An exceptional and coveted metal used by master crafters, it is etched with shifting, glowing runes.",Boosts magical enchantments
+GreenIron,742,Radiant,Uncommon,"A distinctive metal favored by artisans, it glows softly with a golden-white aura.",Effective against undead or demonic foes
+FlameOre,385,Poison,Very Rare,"An exceptional and coveted metal used by master crafters, it exudes a faint, oily sheen with a sickly tint.",Applies toxin effects to weapons
+GraveGlass,200,Poison,Rare,"A prized metal sought for its unique properties, it exudes a faint, oily sheen with a sickly tint.",Applies toxin effects to weapons
+RockMetal,953,Necrotic,Very Rare,"An exceptional and coveted metal used by master crafters, it has dark veins pulsing through its surface.",Drains vitality or weakens enemies
+BlueBronze,150,Nature,Uncommon,"A distinctive metal favored by artisans, it has mossy green flecks that pulse with vitality.",Improves healing or synergy with living things
+BloodCrystal,265,Magnetic,Common,"A sturdy but unremarkable metal, it pulls gently toward metal and tingles when held.",Affects mechanical or metallic constructs
+NightSteel,502,Holy,Rare,"A prized metal sought for its unique properties, it glows softly with a golden-white aura.",Effective against undead or demonic foes
+SkyBronze,1082,"Psychic, Fire",Uncommon,"A distinctive metal favored by artisans, it shimmers with a faint ember glow, andhas a smooth, mirrored surface that distorts reflection.",Adds burn damage to weapons; Enhances mental control or perception
+VerdantGlass,304,Necrotic,Uncommon,"A distinctive metal favored by artisans, it has dark veins pulsing through its surface.",Drains vitality or weakens enemies
+NightGlass,814,"Lightning, Nature",Rare,"A prized metal sought for its unique properties, it crackles faintly with static energy, andhas mossy green flecks that pulse with vitality.",Improves speed or reaction time; Improves healing or synergy with living things
+GreenMetal,185,Fire,Common,"A sturdy but unremarkable metal, it shimmers with a faint ember glow.",Adds burn damage to weapons
+FrostGlass,905,Psychic,Rare,"A prized metal sought for its unique properties, it has a smooth, mirrored surface that distorts reflection.",Enhances mental control or perception
+BitterSteel,1029,"Earth, Poison",Very Rare,"An exceptional and coveted metal used by master crafters, it appears dense and grainy with a stone-like luster, andexudes a faint, oily sheen with a sickly tint.",Increases durability and defense; Applies toxin effects to weapons
+GreenFerrite,509,"Force, Fire",Uncommon,"A distinctive metal favored by artisans, it shimmers with a faint ember glow, andfeels unnaturally dense and hums faintly on touch.",Adds burn damage to weapons; Grants resistance to kinetic impact
+MistMetal,801,"Fire, Air",Rare,"A prized metal sought for its unique properties, it shimmers with a faint ember glow, andhas a silvery sheen that seems to blur at the edges.",Adds burn damage to weapons; Reduces weight of equipment
+StormGlass,1070,Fire,Common,"A sturdy but unremarkable metal, it shimmers with a faint ember glow.",Adds burn damage to weapons
+VoidIron,341,"Water, Radiant",Rare,"A prized metal sought for its unique properties, it feels slick to the touch and glistens like dew, andglows softly with a golden-white aura.",Improves fluidity or regeneration; Effective against undead or demonic foes
+StormOre,333,"Necrotic, Arcane",Uncommon,"A distinctive metal favored by artisans, it has dark veins pulsing through its surface, andis etched with shifting, glowing runes.",Drains vitality or weakens enemies; Boosts magical enchantments
+CoalCrystal,426,Psychic,Very Rare,"An exceptional and coveted metal used by master crafters, it has a smooth, mirrored surface that distorts reflection.",Enhances mental control or perception
+SteelGlass,1443,Fire,Uncommon,"A distinctive metal favored by artisans, it shimmers with a faint ember glow.",Adds burn damage to weapons
+IronShard,764,Poison,Uncommon,"A distinctive metal favored by artisans, it exudes a faint, oily sheen with a sickly tint.",Applies toxin effects to weapons
+BlueFerrite,507,"Arcane, Force",Uncommon,"A distinctive metal favored by artisans, it is etched with shifting, glowing runes, andfeels unnaturally dense and hums faintly on touch.",Boosts magical enchantments; Grants resistance to kinetic impact
+GraveSteel,868,Force,Very Rare,"An exceptional and coveted metal used by master crafters, it feels unnaturally dense and hums faintly on touch.",Grants resistance to kinetic impact
+GraveMetal,847,Air,Common,"A sturdy but unremarkable metal, it has a silvery sheen that seems to blur at the edges.",Reduces weight of equipment
+GhostMetal,1202,"Shadow, Lightning",Common,"A sturdy but unremarkable metal, it crackles faintly with static energy, andabsorbs light, casting a dim aura around it.",Improves speed or reaction time; Improves stealth or concealment
+BloodIron,1051,Water,Uncommon,"A distinctive metal favored by artisans, it feels slick to the touch and glistens like dew.",Improves fluidity or regeneration
+CoalSteel,179,Radiant,Very Rare,"An exceptional and coveted metal used by master crafters, it glows softly with a golden-white aura.",Effective against undead or demonic foes
+DuskweldGlass,484,Air,Uncommon,"A distinctive metal favored by artisans, it has a silvery sheen that seems to blur at the edges.",Reduces weight of equipment
+EchoBronze,101,"Water, Arcane",Rare,"A prized metal sought for its unique properties, it feels slick to the touch and glistens like dew, andis etched with shifting, glowing runes.",Improves fluidity or regeneration; Boosts magical enchantments
+OreCrystal,1033,Holy,Common,"A sturdy but unremarkable metal, it glows softly with a golden-white aura.",Effective against undead or demonic foes
+VoidBronze,588,Radiant,Rare,"A prized metal sought for its unique properties, it glows softly with a golden-white aura.",Effective against undead or demonic foes
+StormMetal,108,"Lightning, Necrotic",Rare,"A prized metal sought for its unique properties, it crackles faintly with static energy, andhas dark veins pulsing through its surface.",Improves speed or reaction time; Drains vitality or weakens enemies
