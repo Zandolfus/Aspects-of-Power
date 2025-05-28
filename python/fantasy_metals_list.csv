@@ -1,0 +1,101 @@
+Name,Hardness,Elemental Affinity,Quality
+Iron,50,None,Common
+Steel,120,None,Common
+Bronze,60,Fire,Common
+Silver,40,"Holy, Lunar",Uncommon
+Gold,25,"Solar, Arcane",Uncommon
+Mithril,950,"Air, Arcane",Rare
+Adamantite,1400,"Earth, Force",Rare
+Orichalcum,1250,"Fire, Lightning",Rare
+Obsidian,90,"Fire, Shadow",Uncommon
+Lead,20,Necrotic,Common
+Copper,35,Lightning,Common
+Tin,30,None,Common
+Brass,70,Fire,Uncommon
+Electrum,45,Lightning,Uncommon
+Nickel,80,Earth,Common
+Zinc,30,Air,Common
+Cobalt,200,Magnetic,Uncommon
+Tungsten,400,Fire,Uncommon
+Titanium,500,"Air, Force",Uncommon
+Platinum,60,Arcane,Uncommon
+GloomMetal,1178,Air,Common
+EchoShard,1117,Shadow,Very Rare
+VerdantIron,651,Water,Uncommon
+GhostCrystal,1195,Lightning,Rare
+SkyShard,755,Lightning,Uncommon
+AshenGlass,517,"Fire, Nature",Common
+SteelIron,407,"Fire, Holy",Uncommon
+VoidCrystal,365,Shadow,Common
+MistOre,1032,"Ice, Earth",Uncommon
+CoalBronze,786,"Force, Nature",Rare
+StormShard,999,"Necrotic, Lightning",Rare
+NightCrystal,1367,"Fire, Earth",Uncommon
+FlameShard,1267,Psychic,Uncommon
+GraveCrystal,880,"Magnetic, Arcane",Very Rare
+IronMetal,762,"Fire, Earth",Rare
+StormIron,429,Fire,Uncommon
+StormAlloy,1120,"Radiant, Force",Uncommon
+SkyMetal,1098,Fire,Common
+DuskweldOre,917,Shadow,Rare
+GreenOre,319,"Lightning, Nature",Rare
+GhostBronze,473,Fire,Uncommon
+BloodOre,1333,Magnetic,Uncommon
+VerdantFerrite,152,Magnetic,Uncommon
+GreenAlloy,1114,Radiant,Uncommon
+BrightSteel,685,Ice,Common
+FrostAlloy,736,"Psychic, Poison",Common
+StormSteel,664,"Ice, Lightning",Uncommon
+AshenFerrite,1419,Poison,Common
+GhostGlass,752,Shadow,Common
+BloodFerrite,704,"Radiant, Force",Uncommon
+StormFerrite,853,Force,Uncommon
+BitterIron,1036,Force,Rare
+CloudFerrite,1181,Water,Rare
+CoalAlloy,353,Poison,Very Rare
+VoidSteel,1141,Earth,Uncommon
+SkyCrystal,577,"Earth, Ice",Rare
+FlameMetal,1342,Magnetic,Uncommon
+OreOre,876,"Force, Necrotic",Uncommon
+EchoSteel,1317,Force,Uncommon
+BlueIron,1446,Radiant,Uncommon
+BitterOre,1127,"Water, Air",Very Rare
+RockOre,355,"Arcane, Air",Uncommon
+AshenIron,492,Shadow,Common
+OreGlass,332,"Holy, Force",Common
+GloomFerrite,382,Lightning,Rare
+EchoAlloy,1293,Necrotic,Uncommon
+MistFerrite,175,"Nature, Earth",Very Rare
+GreenSteel,138,Arcane,Very Rare
+GreenIron,742,Radiant,Uncommon
+FlameOre,385,Poison,Very Rare
+GraveGlass,200,Poison,Rare
+RockMetal,953,Necrotic,Very Rare
+BlueBronze,150,Nature,Uncommon
+BloodCrystal,265,Magnetic,Common
+NightSteel,502,Holy,Rare
+SkyBronze,1082,"Psychic, Fire",Uncommon
+VerdantGlass,304,Necrotic,Uncommon
+NightGlass,814,"Lightning, Nature",Rare
+GreenMetal,185,Fire,Common
+FrostGlass,905,Psychic,Rare
+BitterSteel,1029,"Earth, Poison",Very Rare
+GreenFerrite,509,"Force, Fire",Uncommon
+MistMetal,801,"Fire, Air",Rare
+StormGlass,1070,Fire,Common
+VoidIron,341,"Water, Radiant",Rare
+StormOre,333,"Necrotic, Arcane",Uncommon
+CoalCrystal,426,Psychic,Very Rare
+SteelGlass,1443,Fire,Uncommon
+IronShard,764,Poison,Uncommon
+BlueFerrite,507,"Arcane, Force",Uncommon
+GraveSteel,868,Force,Very Rare
+GraveMetal,847,Air,Common
+GhostMetal,1202,"Shadow, Lightning",Common
+BloodIron,1051,Water,Uncommon
+CoalSteel,179,Radiant,Very Rare
+DuskweldGlass,484,Air,Uncommon
+EchoBronze,101,"Water, Arcane",Rare
+OreCrystal,1033,Holy,Common
+VoidBronze,588,Radiant,Rare
+StormMetal,108,"Lightning, Necrotic",Rare
