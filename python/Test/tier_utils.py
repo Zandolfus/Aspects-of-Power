@@ -3,7 +3,7 @@ Tier utility functions for character progression system.
 Pure utility functions that operate on game data without side effects.
 """
 from typing import List, Optional, Dict, Tuple
-from game_data2 import class_gains, profession_gains
+from game_data import class_gains, profession_gains
 
 def get_tier_for_level(level: int, tier_thresholds: List[int]) -> int:
     """Get the tier number for a given level using character's thresholds"""
