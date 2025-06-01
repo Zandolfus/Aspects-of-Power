@@ -1,20 +1,24 @@
-"""
-Improved Character structure with better separation of concerns and proper encapsulation
-"""
 from typing import Dict, List, Optional, Tuple, Any
 import math
 import random
 import csv
 import os
 import json
+import datetime
 from dataclasses import dataclass
-from game_data import tier1_class_gains, tier2_class_gains, races, tier1_profession_gains, tier2_profession_gains
+from game_data import races, DEFAULT_TIER_THRESHOLDS
+from tier_utils import (
+    get_tier_for_level, get_next_tier_threshold, get_tier_range,
+    get_class_gains, get_profession_gains, 
+    validate_class_tier_combination, validate_profession_tier_combination
+)
 
 # Constants
 STATS = ["vitality", "endurance", "strength", "dexterity", "toughness", 
          "intelligence", "willpower", "wisdom", "perception"]
 META_INFO = ["Class", "Class level", "Race", "Profession", "Profession level"]
 DERIVED_META = ["Race level", "Race rank"]  # Meta attributes that are derived/calculated automatically
+TIER_HISTORY_META = ["tier_threshold", "class_history", "profession_history"]  # Tier change tracking
 
 # Configuration (could be moved to a JSON config file)
 STAT_MODIFIER_FORMULA = {
@@ -37,10 +41,14 @@ class StatSource:
 class CharacterDataManager:
     """
     Central manager for character data with proper encapsulation and state management.
-    Handles both stats and meta information with appropriate validation.
+    Handles stats and meta information with appropriate validation and dependencies.
+    REFACTORED: Race level calculation moved to LevelSystem
     """
     def __init__(self, stats: Optional[Dict[str, int]] = None, 
-                 meta: Optional[Dict[str, Any]] = None):
+                 meta: Optional[Dict[str, Any]] = None,
+                 tier_thresholds: Optional[List[int]] = None,
+                 class_history: Optional[List[Dict[str, Any]]] = None,
+                 profession_history: Optional[List[Dict[str, Any]]] = None):
         # Initialize stats
         self._base_stats = {stat: 5 for stat in STATS}
         if stats:
@@ -60,6 +68,27 @@ class CharacterDataManager:
                 if key in META_INFO:
                     self._meta[key] = value
         
+        # Initialize tier change tracking with character-specific thresholds
+        self.tier_thresholds = tier_thresholds or DEFAULT_TIER_THRESHOLDS.copy()
+        self.class_history = class_history or []
+        self.profession_history = profession_history or []
+        
+        # Initialize class history if character has a class but no history
+        if self._meta.get("Class") and not self.class_history:
+            self.class_history = [{
+                "class": self._meta["Class"],
+                "from_level": 1,
+                "to_level": None  # None means current
+            }]
+        
+        # Initialize profession history if character has a profession but no history
+        if self._meta.get("Profession") and not self.profession_history:
+            self.profession_history = [{
+                "profession": self._meta["Profession"],
+                "from_level": 1,
+                "to_level": None  # None means current
+            }]
+        
         # Ensure numeric meta values are stored as strings for consistency
         for key in ["Class level", "Profession level"]:
             if self._meta[key] == "":
@@ -67,10 +96,12 @@ class CharacterDataManager:
             elif isinstance(self._meta[key], int):
                 self._meta[key] = str(self._meta[key])
         
-        # Initialize derived values
-        for key in DERIVED_META:
-            if key not in self._meta:
-                self._meta[key] = "0" if "level" in key.lower() else ""
+        # Initialize derived meta values (but don't calculate race levels here)
+        # Race levels will be calculated by LevelSystem
+        if "Race level" not in self._meta:
+            self._meta["Race level"] = "0"
+        if "Race rank" not in self._meta:
+            self._meta["Race rank"] = ""
         
         # Calculate current stats from all sources
         self._current_stats = self._calculate_current_stats()
@@ -165,8 +196,9 @@ class CharacterDataManager:
         # Set new value
         self._meta[key] = value
         
-        # Return whether value changed
-        return old_value != value
+        # Handle cascading updates if value changed
+        changed = old_value != value
+        return changed
     
     def get_all_stats(self) -> Dict[str, int]:
         """Get all current stats"""
@@ -210,6 +242,194 @@ class CharacterDataManager:
             if stat in STATS:
                 self.add_stat(stat, -value, StatSource.ITEM)
     
+    def get_class_at_level(self, level: int) -> Optional[str]:
+        """Get the class that was active at a specific level"""
+        for entry in self.class_history:
+            if entry["from_level"] <= level:
+                if entry["to_level"] is None or level <= entry["to_level"]:
+                    return entry["class"]
+        return None
+    
+    def get_profession_at_level(self, level: int) -> Optional[str]:
+        """Get the profession that was active at a specific level"""
+        for entry in self.profession_history:
+            if entry["from_level"] <= level:
+                if entry["to_level"] is None or level <= entry["to_level"]:
+                    return entry["profession"]
+        return None
+    
+    def add_class_change(self, new_class: str, at_level: int):
+        """Record a class change at a specific level"""
+        # Close the current class entry
+        if self.class_history:
+            current_entry = self.class_history[-1]
+            if current_entry["to_level"] is None:
+                current_entry["to_level"] = at_level - 1
+        
+        # Add new class entry
+        self.class_history.append({
+            "class": new_class,
+            "from_level": at_level,
+            "to_level": None
+        })
+        
+        # Update current class in meta
+        self._meta["Class"] = new_class
+    
+    def add_profession_change(self, new_profession: str, at_level: int):
+        """Record a profession change at a specific level"""
+        # Close the current profession entry
+        if self.profession_history:
+            current_entry = self.profession_history[-1]
+            if current_entry["to_level"] is None:
+                current_entry["to_level"] = at_level - 1
+        
+        # Add new profession entry
+        self.profession_history.append({
+            "profession": new_profession,
+            "from_level": at_level,
+            "to_level": None
+        })
+        
+        # Update current profession in meta
+        self._meta["Profession"] = new_profession
+    
+    def get_tier_for_level(self, level: int) -> int:
+        """Get the tier number for a given level using this character's thresholds"""
+        return get_tier_for_level(level, self.tier_thresholds)
+    
+    def get_next_tier_threshold(self, current_level: int) -> Optional[int]:
+        """Get the next tier threshold for this character, or None if no more tiers"""
+        return get_next_tier_threshold(current_level, self.tier_thresholds)
+    
+    def get_tier_range(self, tier: int) -> Tuple[int, int]:
+        """Get the level range for a specific tier using this character's thresholds"""
+        return get_tier_range(tier, self.tier_thresholds)
+    
+    def set_tier_thresholds(self, thresholds: List[int]) -> Tuple[bool, str]:
+        """
+        Set custom tier thresholds, replacing existing ones.
+        Returns (success, message) with validation results.
+        """
+        # Validate new thresholds
+        if not thresholds:
+            return False, "Threshold list cannot be empty"
+        
+        # Check for duplicates and ensure they're positive
+        if len(thresholds) != len(set(thresholds)):
+            return False, "Duplicate thresholds not allowed"
+        
+        if any(t <= 0 for t in thresholds):
+            return False, "All thresholds must be positive"
+        
+        # Check if any new thresholds conflict with character's current progression
+        class_level = int(self.get_meta("Class level", "0"))
+        profession_level = int(self.get_meta("Profession level", "0"))
+        max_level = max(class_level, profession_level)
+        
+        sorted_thresholds = sorted(thresholds)
+        
+        # Find which tier the character is currently in with old thresholds
+        old_tier = get_tier_for_level(max_level, self.tier_thresholds)
+        new_tier = get_tier_for_level(max_level, sorted_thresholds)
+        
+        warning = ""
+        if old_tier != new_tier:
+            warning = f"Warning: Character's current tier will change from {old_tier} to {new_tier}"
+        
+        # Update thresholds
+        old_thresholds = self.tier_thresholds.copy()
+        self.tier_thresholds = sorted_thresholds
+        
+        success_msg = f"Thresholds updated from {old_thresholds} to {sorted_thresholds}"
+        if warning:
+            success_msg += f". {warning}"
+        
+        return True, success_msg
+    
+    def add_tier_threshold(self, threshold: int) -> bool:
+        """
+        Add a new tier threshold.
+        Returns True if threshold was added, False if it already exists.
+        """
+        if threshold in self.tier_thresholds:
+            return False
+        
+        self.tier_thresholds.append(threshold)
+        self.tier_thresholds.sort()
+        return True
+    
+    def remove_tier_threshold(self, threshold: int) -> Tuple[bool, str]:
+        """
+        Remove a tier threshold.
+        Returns (success, message) indicating if removal was successful and why.
+        """
+        if threshold not in self.tier_thresholds:
+            return False, f"Threshold {threshold} not found"
+        
+        # Check if character has already passed this threshold
+        class_level = int(self.get_meta("Class level", "0"))
+        profession_level = int(self.get_meta("Profession level", "0"))
+        max_level = max(class_level, profession_level)
+        
+        if max_level >= threshold:
+            return False, f"Cannot remove threshold {threshold}: character has already reached level {max_level}"
+        
+        self.tier_thresholds.remove(threshold)
+        return True, f"Threshold {threshold} removed successfully"
+    
+    def validate_tier_thresholds_with_character(self) -> Dict[str, Any]:
+        """
+        Validate tier thresholds against character's current progression.
+        Returns detailed analysis of potential issues.
+        """
+        class_level = int(self.get_meta("Class level", "0"))
+        profession_level = int(self.get_meta("Profession level", "0"))
+        
+        result = {
+            "valid": True,
+            "warnings": [],
+            "errors": [],
+            "current_tiers": {
+                "class": get_tier_for_level(class_level, self.tier_thresholds) if class_level > 0 else 0,
+                "profession": get_tier_for_level(profession_level, self.tier_thresholds) if profession_level > 0 else 0
+            },
+            "progression_analysis": {}
+        }
+        
+        # Check if current class/profession exist in their current tiers
+        if class_level > 0:
+            current_class = self.get_meta("Class", "")
+            class_tier = result["current_tiers"]["class"]
+            if not validate_class_tier_combination(current_class, class_tier):
+                result["valid"] = False
+                result["errors"].append(f"Current class '{current_class}' is not valid for tier {class_tier}")
+        
+        if profession_level > 0:
+            current_profession = self.get_meta("Profession", "")
+            profession_tier = result["current_tiers"]["profession"]
+            if not validate_profession_tier_combination(current_profession, profession_tier):
+                result["valid"] = False
+                result["errors"].append(f"Current profession '{current_profession}' is not valid for tier {profession_tier}")
+        
+        # Analyze upcoming tier changes
+        for level_type, current_level in [("Class", class_level), ("Profession", profession_level)]:
+            if current_level > 0:
+                next_threshold = get_next_tier_threshold(current_level, self.tier_thresholds)
+                if next_threshold:
+                    current_tier = get_tier_for_level(current_level, self.tier_thresholds)
+                    next_tier = current_tier + 1
+                    
+                    result["progression_analysis"][level_type.lower()] = {
+                        "current_level": current_level,
+                        "current_tier": current_tier,
+                        "next_threshold": next_threshold,
+                        "next_tier": next_tier,
+                        "levels_to_next_tier": next_threshold - current_level
+                    }
+        
+        return result
+    
     def apply_blessing(self, blessing_stats: Dict[str, int]) -> None:
         """Apply blessing bonuses to stats"""
         for stat, value in blessing_stats.items():
@@ -234,37 +454,17 @@ class HealthManager:
         """Calculate max health based on vitality modifier"""
         return int(self.data_manager.get_stat_modifier("vitality"))
     
-    def update_max_health(self, reason: str = "other") -> None:
-        """
-        Update max health based on current vitality modifier
-        
-        reason: The reason for the max health update
-          - "level_up": From character leveling up
-          - "item": From equipping/unequipping an item
-          - "blessing": From adding/removing a blessing
-          - "other": Default case
-        """
+    def update_max_health(self) -> None:
+        """Update max health based on current vitality modifier"""
         old_max = self.max_health
         self.max_health = self._calculate_max_health()
         
-        if reason == "level_up" and self.max_health > old_max:
-            # For level-up, always add the full difference to current health
+        # If max health increased, also increase current health by the same amount
+        if self.max_health > old_max:
             self.current_health += (self.max_health - old_max)
-        elif reason in ["item", "blessing"]:
-            # For items/blessings, adjust based on whether character is at full health
-            if self.current_health == old_max:
-                # At full health, increase current health to the new max
-                self.current_health = self.max_health
-            else:
-                # Not at full health, keep the same percentage of health
-                health_percentage = self.current_health / old_max if old_max > 0 else 1.0
-                self.current_health = max(1, int(self.max_health * health_percentage))
         else:
-            # Default case
-            if self.max_health > old_max:
-                self.current_health += (self.max_health - old_max)
-            else:
-                self.current_health = min(self.current_health, self.max_health)
+            # Ensure current health doesn't exceed max
+            self.current_health = min(self.current_health, self.max_health)
     
     def take_damage(self, damage: int) -> None:
         """Reduce character health by damage amount"""
@@ -447,7 +647,10 @@ class CombatSystem:
         return hit, damage, net_damage
 
 class LevelSystem:
-    """Manages character leveling and progression including race levels and free points"""
+    """
+    Manages character leveling and progression
+    REFACTORED: Now handles race level calculations and stat applications
+    """
     
     def __init__(self, data_manager: CharacterDataManager):
         self.data_manager = data_manager
@@ -481,12 +684,64 @@ class LevelSystem:
             elif level_type.lower() == "profession":
                 self._apply_profession_level_up(level)
         
-        # Update race level after class/profession level change
+        # Update race level after class/profession level changes
         self._update_race_level()
         
         return True
     
-    def _update_race_level(self) -> None:
+    def _apply_class_level_up(self, level: int) -> None:
+        """Apply stat increases for class level-up using character's tier system"""
+        # Get the class that was active at this level
+        class_name = self.data_manager.get_class_at_level(level)
+        if not class_name:
+            print(f"Warning: No class found for level {level}.")
+            return
+        
+        class_name = class_name.lower()
+        
+        # Get the tier for this level using character's thresholds
+        tier = self.data_manager.get_tier_for_level(level)
+        
+        # Get gains from the appropriate tier
+        gains = get_class_gains(class_name, tier)
+        if not gains:
+            print(f"Warning: No gains found for class '{class_name}' in tier {tier}.")
+            return
+        
+        # Apply the stat gains
+        for stat, gain in gains.items():
+            if stat == "free_points":
+                self.free_points += gain
+            elif stat in STATS:
+                self.data_manager.add_stat(stat, gain, StatSource.CLASS)
+    
+    def _apply_profession_level_up(self, level: int) -> None:
+        """Apply stat increases for profession level-up using character's tier system"""
+        # Get the profession that was active at this level
+        profession = self.data_manager.get_profession_at_level(level)
+        if not profession:
+            print(f"Warning: No profession found for level {level}.")
+            return
+        
+        profession = profession.lower()
+        
+        # Get the tier for this level using character's thresholds
+        tier = self.data_manager.get_tier_for_level(level)
+        
+        # Get gains from the appropriate tier
+        gains = get_profession_gains(profession, tier)
+        if not gains:
+            print(f"Warning: No gains found for profession '{profession}' in tier {tier}.")
+            return
+        
+        # Apply the stat gains
+        for stat, gain in gains.items():
+            if stat == "free_points":
+                self.free_points += gain
+            elif stat in STATS:
+                self.data_manager.add_stat(stat, gain, StatSource.PROFESSION)
+    
+    def _update_race_level(self, skip_free_points: bool = False, apply_bonuses: bool = True) -> None:
         """Update race level based on class and profession level"""
         try:
             class_level = int(self.data_manager.get_meta("Class level", "0"))
@@ -497,101 +752,17 @@ class LevelSystem:
             # Get current race level for comparison
             current_race_level = int(self.data_manager.get_meta("Race level", "0"))
             
-            # If no change in level, nothing to do
-            if new_race_level == current_race_level:
-                return
-                
-            print(f"Updating race level from {current_race_level} to {new_race_level}")
+            # Update race level
+            self.data_manager.set_meta("Race level", str(new_race_level), force=True)
+            self._update_race_rank(new_race_level)
             
-            # For any level change
-            if new_race_level != current_race_level:
-                # Reset race contributions because we'll recalculate them
-                for stat in STATS:
-                    self.data_manager.reset_stat_source(stat, StatSource.RACE)
-                    
-                # Apply race level gains from 1 to new_race_level
-                self._apply_race_level_up(0, new_race_level)
-                
-                # Update race level in meta data
-                self.data_manager.set_meta("Race level", str(new_race_level), force=True)
-        except ValueError as e:
-            print(f"Warning: Invalid level values detected: {e}")
+            # Apply race level-up effects if level increased
+            if apply_bonuses and new_race_level > current_race_level:
+                self._apply_race_level_up(current_race_level, new_race_level, skip_free_points)
+        except ValueError:
+            print("Warning: Invalid level values detected.")
     
-    def _apply_class_level_up(self, level: int) -> None:
-        """Apply stat increases for class level-up"""
-        
-        class_name = self.data_manager.get_meta("Class", "").lower()
-        if not class_name:
-            print("Warning: Character has no class defined.")
-            return
-        
-        # Check if class needs to be upgraded at level 25
-        if level == 25:
-            # In a real implementation, this would involve user input
-            new_class = input("Enter your new class: ")
-            self.data_manager.set_meta("Class", new_class)
-            class_name = new_class.lower()
-        
-        # Determine which tier gains to apply
-        if level <= 24:
-            if class_name in tier1_class_gains:
-                gains = tier1_class_gains[class_name]
-            else:
-                print(f"Warning: Class '{class_name}' not found in tier 1.")
-                return
-        else:
-            if class_name in tier2_class_gains:
-                gains = tier2_class_gains[class_name]
-            else:
-                print(f"Warning: Class '{class_name}' not found in tier 2.")
-                return
-        
-        # Apply the stat gains
-        for stat, gain in gains.items():
-            if stat == "free_points":
-                self.free_points += gain
-                print(f"Class level-up: Added {gain} free points")
-            elif stat in STATS:
-                self.data_manager.add_stat(stat, gain, StatSource.CLASS)
-    
-    def _apply_profession_level_up(self, level: int) -> None:
-        """Apply stat increases for profession level-up"""
-        
-        profession = self.data_manager.get_meta("Profession", "").lower()
-        if not profession:
-            print("Warning: Character has no profession defined.")
-            return
-        
-        # Check if profession needs to be upgraded at level 25
-        if level == 25:
-            # In a real implementation, this would involve user input
-            new_profession = input("Enter your new profession: ")
-            self.data_manager.set_meta("Profession", new_profession)
-            profession = new_profession.lower()
-        
-        # Determine which tier gains to apply
-        if level <= 24:
-            if profession in tier1_profession_gains:
-                gains = tier1_profession_gains[profession]
-            else:
-                print(f"Warning: Profession '{profession}' not found in tier 1.")
-                return
-        else:
-            if profession in tier2_profession_gains:
-                gains = tier2_profession_gains[profession]
-            else:
-                print(f"Warning: Profession '{profession}' not found in tier 2.")
-                return
-        
-        # Apply the stat gains
-        for stat, gain in gains.items():
-            if stat == "free_points":
-                self.free_points += gain
-                print(f"Profession level-up: Added {gain} free points")
-            elif stat in STATS:
-                self.data_manager.add_stat(stat, gain, StatSource.PROFESSION)
-    
-    def _apply_race_level_up(self, from_level: int, to_level: int) -> None:
+    def _apply_race_level_up(self, from_level: int, to_level: int, skip_free_points: bool = False) -> None:
         """Apply stat changes for race level-up from from_level to to_level"""
         race = self.data_manager.get_meta("Race", "").lower()
         if not race:
@@ -628,82 +799,138 @@ class LevelSystem:
                 self.data_manager.set_meta("Race rank", applicable_range["rank"], force=True)
             
             # Apply stat gains
-            if "stats" in applicable_range:
-                for stat, gain in applicable_range["stats"].items():
-                    if stat == "free_points":
-                        # Free points are managed by LevelSystem
+            for stat, gain in applicable_range["stats"].items():
+                if stat == "free_points":
+                    if not skip_free_points:  # Only add free points if not skipping
                         self.free_points += gain
-                        print(f"Race level-up: Added {gain} free points")
-                    elif stat in STATS:
-                        self.data_manager.add_stat(stat, gain, StatSource.RACE)
+                elif stat in STATS:
+                    self.data_manager.add_stat(stat, gain, StatSource.RACE)
     
-    def change_class(self, new_class: str) -> bool:
-        """Change character's class with proper recalculation"""
-        old_class = self.data_manager.get_meta("Class", "")
-        class_level = int(self.data_manager.get_meta("Class level", "0"))
+    def _update_race_rank(self, race_level: int) -> None:
+        """Update race rank label based on race level (NO stat bonuses applied)."""
+        race = self.data_manager.get_meta("Race", "").lower()
+        if not race or race_level <= 0:
+            self.data_manager.set_meta("Race rank", "", force=True)
+            return
         
-        if old_class == new_class:
+        if race not in races:
+            print(f"Warning: Race '{race}' not found in race data.")
+            return
+        
+        race_data = races.get(race, {})
+        rank_ranges = race_data.get("rank_ranges", [])
+        
+        if not rank_ranges:
+            print(f"Warning: No rank ranges defined for race '{race}'.")
+            return
+        
+        # Find the appropriate rank for this level
+        for range_data in sorted(rank_ranges, key=lambda x: x["min_level"]):
+            if range_data["min_level"] <= race_level <= range_data["max_level"]:
+                if "rank" in range_data:
+                    self.data_manager.set_meta("Race rank", range_data["rank"], force=True)
+                    print(f"Race rank updated to: {range_data['rank']}")
+                    return
+        
+        # If no matching range found, clear the rank
+        self.data_manager.set_meta("Race rank", "", force=True)
+        print(f"No matching rank range found for race level {race_level}")
+    
+    def change_class(self, new_class: str, at_level: int) -> bool:
+        """
+        Change character's class name and record the change in history.
+        Validates against available tiers dynamically.
+        Returns True if successful, False otherwise.
+        """
+        # Determine what tier this level corresponds to
+        tier = self.data_manager.get_tier_for_level(at_level)
+        
+        # Validate that new_class exists in the appropriate tier
+        if not validate_class_tier_combination(new_class, tier):
+            print(f"Invalid class '{new_class}' for tier {tier} at level {at_level}")
             return False
-        
-        # Update the class
-        self.data_manager.set_meta("Class", new_class)
-        
-        # Recalculate class bonuses if character has class levels
-        if class_level > 0:
-            # Reset class stat bonuses and free points from class
-            for stat in STATS:
-                self.data_manager.reset_stat_source(stat, StatSource.CLASS)
             
-            # Reapply class bonuses for all levels
-            for level in range(1, class_level + 1):
-                self._apply_class_level_up(level)
+        # Record the class change in history
+        old_class = self.data_manager.get_meta("Class", "")
+        self.data_manager.add_class_change(new_class, at_level)
         
+        if old_class != new_class:
+            print(f"Class changed from {old_class} to {new_class} at level {at_level}")
+                
         return True
     
-    def change_profession(self, new_profession: str) -> bool:
-        """Change character's profession with proper recalculation"""
-        old_profession = self.data_manager.get_meta("Profession", "")
-        profession_level = int(self.data_manager.get_meta("Profession level", "0"))
+    def change_profession(self, new_profession: str, at_level: int) -> bool:
+        """
+        Change character's profession name and record the change in history.
+        Validates against available tiers dynamically.
+        Returns True if successful, False otherwise.
+        """
+        # Determine what tier this level corresponds to
+        tier = self.data_manager.get_tier_for_level(at_level)
         
-        if old_profession == new_profession:
+        # Validate that new_profession exists in the appropriate tier
+        if not validate_profession_tier_combination(new_profession, tier):
+            print(f"Invalid profession '{new_profession}' for tier {tier} at level {at_level}")
             return False
-        
-        # Update the profession
-        self.data_manager.set_meta("Profession", new_profession)
-        
-        # Recalculate profession bonuses if character has profession levels
-        if profession_level > 0:
-            # Reset profession stat bonuses
-            for stat in STATS:
-                self.data_manager.reset_stat_source(stat, StatSource.PROFESSION)
             
-            # Reapply profession bonuses for all levels
-            for level in range(1, profession_level + 1):
-                self._apply_profession_level_up(level)
+        # Record the profession change in history
+        old_profession = self.data_manager.get_meta("Profession", "")
+        self.data_manager.add_profession_change(new_profession, at_level)
         
+        if old_profession != new_profession:
+            print(f"Profession changed from {old_profession} to {new_profession} at level {at_level}")
+                
         return True
     
     def change_race(self, new_race: str) -> bool:
-        """Change character's race with proper recalculation"""
+        """
+        Change character's race and recalculate race bonuses.
+        Returns True if successful, False otherwise.
+        """
         old_race = self.data_manager.get_meta("Race", "")
-        race_level = int(self.data_manager.get_meta("Race level", "0"))
         
         if old_race == new_race:
             return False
         
+        # Reset race stat bonuses
+        for stat in STATS:
+            self.data_manager.reset_stat_source(stat, StatSource.RACE)
+        
         # Update the race
         self.data_manager.set_meta("Race", new_race)
         
-        # Recalculate race bonuses
-        if race_level > 0:
-            # Reset race stat bonuses
-            for stat in STATS:
-                self.data_manager.reset_stat_source(stat, StatSource.RACE)
-            
-            # Reapply race bonuses
-            self._apply_race_level_up(0, race_level)
+        # Recalculate and apply new race bonuses for current race level
+        current_race_level = int(self.data_manager.get_meta("Race level", "0"))
+        if current_race_level > 0:
+            self._apply_race_level_up(0, current_race_level)
         
+        print(f"Race changed from {old_race} to {new_race}")
         return True
+    
+    def recalculate_race_levels(self, skip_free_points: bool = False) -> None:
+        """
+        Recalculate race levels from scratch.
+        
+        Args:
+            skip_free_points: If True, don't modify free points (used when loading characters)
+        
+        This method:
+        1. Resets all race stat bonuses to zero
+        2. Resets race level and rank  
+        3. Recalculates race level based on current class/profession levels
+        4. Reapplies appropriate race stat bonuses
+        5. Optionally adds race free points (skipped when loading)
+        """
+        # Reset all race bonuses
+        for stat in STATS:
+            self.data_manager.reset_stat_source(stat, StatSource.RACE)
+        
+        # Reset race level and rank
+        self.data_manager.set_meta("Race level", "0", force=True)
+        self.data_manager.set_meta("Race rank", "", force=True)
+        
+        # Recalculate race level (pass skip_free_points flag)
+        self._update_race_level(skip_free_points=skip_free_points)
     
     def allocate_free_points(self, stat: str, amount: int) -> bool:
         """Allocate free points to a specific stat"""
@@ -729,46 +956,28 @@ class LevelSystem:
         while self.free_points > 0:
             stat = random.choice(STATS)
             self.allocate_free_points(stat, 1)
-    
-    def calculate_all_level_bonuses(self) -> None:
-        """
-        Recalculate all level-based bonuses from scratch.
-        Useful when loading a character or after changing class/profession/race.
-        """
-        # Clear all level-based stat sources
-        for stat in STATS:
-            self.data_manager.reset_stat_source(stat, StatSource.CLASS)
-            self.data_manager.reset_stat_source(stat, StatSource.PROFESSION)
-            self.data_manager.reset_stat_source(stat, StatSource.RACE)
-        
-        # Apply class level bonuses
-        class_level = int(self.data_manager.get_meta("Class level", "0"))
-        if class_level > 0:
-            for level in range(1, class_level + 1):
-                self._apply_class_level_up(level)
-        
-        # Apply profession level bonuses
-        profession_level = int(self.data_manager.get_meta("Profession level", "0"))
-        if profession_level > 0:
-            for level in range(1, profession_level + 1):
-                self._apply_profession_level_up(level)
-        
-        # Update and apply race level
-        self._update_race_level()
 
 class CharacterSerializer:
-    """Handles saving and loading characters"""
+    """Handles saving and loading characters with factory method support."""
     
     @staticmethod
     def save_to_csv(character, filename: str, mode: str = "a") -> bool:
-        """Save character to CSV file"""
+        """Save character with validation status and creation history."""
         try:
             # Define fields for the CSV
-            # Base attributes
             fieldnames = ["Name"]
             
             # Add meta fields
             fieldnames += META_INFO + DERIVED_META
+            
+            # Add tier history fields
+            fieldnames += ["tier_thresholds", "class_history", "profession_history"]
+            
+            # Add manual character tracking
+            fieldnames += ["is_manual_character", "manual_base_stats", "manual_current_stats"]
+            
+            # Add validation and conversion tracking
+            fieldnames += ["validation_status", "creation_history"]
             
             # Add stat fields
             fieldnames += STATS
@@ -776,7 +985,7 @@ class CharacterSerializer:
             # Add modifier fields
             fieldnames += [f"{stat}_modifier" for stat in STATS]
             
-            # Add stat source fields for each source type
+            # Add stat source fields
             for source in [StatSource.BASE, StatSource.CLASS, StatSource.PROFESSION, 
                            StatSource.RACE, StatSource.ITEM, StatSource.BLESSING, 
                            StatSource.FREE_POINTS]:
@@ -785,7 +994,7 @@ class CharacterSerializer:
             # Add free points
             fieldnames += ["free_points"]
             
-            # Check if file exists and if character already exists in it
+            # Check if file exists and handle existing data
             existing_data = []
             character_exists = False
             file_exists = os.path.exists(filename)
@@ -820,6 +1029,20 @@ class CharacterSerializer:
                 for key, value in meta.items():
                     row[key] = value
                 
+                # Add tier history data
+                row["tier_thresholds"] = json.dumps(character.data_manager.tier_thresholds)
+                row["class_history"] = json.dumps(character.data_manager.class_history)
+                row["profession_history"] = json.dumps(character.data_manager.profession_history)
+                
+                # Add manual character data
+                row["is_manual_character"] = character.is_manual_character
+                row["manual_base_stats"] = json.dumps(character.manual_base_stats or {})
+                row["manual_current_stats"] = json.dumps(character.manual_current_stats or {})
+                
+                # Add validation and creation data
+                row["validation_status"] = character.validation_status
+                row["creation_history"] = json.dumps(character.creation_history or {})
+                
                 # Add current stats
                 for stat, value in stats.items():
                     row[stat] = value
@@ -831,8 +1054,10 @@ class CharacterSerializer:
                 # Add stat sources
                 for stat in STATS:
                     sources = character.data_manager.get_stat_sources(stat)
-                    for source, value in sources.items():
-                        row[f"{stat}_{source}"] = value
+                    for source in [StatSource.BASE, StatSource.CLASS, StatSource.PROFESSION, 
+                                    StatSource.RACE, StatSource.ITEM, StatSource.BLESSING, 
+                                    StatSource.FREE_POINTS]:
+                        row[f"{stat}_{source}"] = sources.get(source, 0)
                 
                 # Add free points
                 row["free_points"] = character.level_system.free_points
@@ -847,7 +1072,7 @@ class CharacterSerializer:
     
     @staticmethod
     def load_from_csv(filename: str, character_name: str, item_repository=None):
-        """Load character from CSV file"""
+        """Load character from CSV file using appropriate factory method."""
         try:
             if not os.path.exists(filename):
                 print(f"File not found: {filename}")
@@ -860,21 +1085,64 @@ class CharacterSerializer:
                     if "Name" in row and row["Name"].lower() == character_name.lower():
                         # Found the character
                         
-                        # Extract meta info
+                        # Extract meta info (including derived meta)
                         meta = {}
                         for key in META_INFO + DERIVED_META:
                             if key in row:
                                 meta[key] = row[key]
                         
-                        # Extract stats
-                        stats = {}
-                        for stat in STATS:
-                            if stat in row:
+                        # Extract tier history
+                        tier_thresholds = [25]  # Default
+                        if "tier_thresholds" in row and row["tier_thresholds"]:
+                            try:
+                                tier_thresholds = json.loads(row["tier_thresholds"])
+                            except json.JSONDecodeError:
+                                print("Warning: Invalid tier thresholds data, using default ([25]).")
+                        
+                        class_history = []
+                        if "class_history" in row and row["class_history"]:
+                            try:
+                                class_history = json.loads(row["class_history"])
+                            except json.JSONDecodeError:
+                                print("Warning: Invalid class history data.")
+                        
+                        profession_history = []
+                        if "profession_history" in row and row["profession_history"]:
+                            try:
+                                profession_history = json.loads(row["profession_history"])
+                            except json.JSONDecodeError:
+                                print("Warning: Invalid profession history data.")
+                                
+                        creation_history = None
+                        if "creation_history" in row and row["creation_history"]:
+                            try:
+                                creation_history = json.loads(row["creation_history"])
+                            except json.JSONDecodeError:
+                                print("Warning: Invalid creation history data.")
+                                
+                        validation_status = row.get("validation_status", "unvalidated")
+                        
+                        # Check if this is a manual character
+                        is_manual = False
+                        manual_base_stats = None
+                        manual_current_stats = None
+                        
+                        if "is_manual_character" in row:
+                            is_manual = row["is_manual_character"].lower() in ["true", "1", "yes"]
+                        
+                        if is_manual:
+                            # Load manual character data
+                            if "manual_base_stats" in row and row["manual_base_stats"]:
                                 try:
-                                    stats[stat] = int(row[stat])
-                                except ValueError:
-                                    print(f"Warning: Invalid stat value for {stat}: {row[stat]}")
-                                    stats[stat] = 5  # Default value
+                                    manual_base_stats = json.loads(row["manual_base_stats"])
+                                except json.JSONDecodeError:
+                                    print("Warning: Invalid manual base stats data.")
+                            
+                            if "manual_current_stats" in row and row["manual_current_stats"]:
+                                try:
+                                    manual_current_stats = json.loads(row["manual_current_stats"])
+                                except json.JSONDecodeError:
+                                    print("Warning: Invalid manual current stats data.")
                         
                         # Extract free points
                         free_points = 0
@@ -899,17 +1167,76 @@ class CharacterSerializer:
                                         print(f"Warning: Invalid source value for {source_key}: {row[source_key]}")
                                         stat_sources[stat][source] = 0
                         
-                        # Create and return a new character
-                        character = Character(
-                            name=row["Name"],
-                            stats=stats,
-                            meta=meta,
-                            free_points=free_points,
-                            stat_sources=stat_sources,
-                            item_repository=item_repository
-                        )
+                        # Extract base stats from stat_sources
+                        base_stats = {}
+                        for stat in STATS:
+                            if stat in stat_sources and StatSource.BASE in stat_sources[stat]:
+                                base_stats[stat] = stat_sources[stat][StatSource.BASE]
+                            else:
+                                base_stats[stat] = 5  # Default base value
+                        
+                        # Create character using appropriate factory method
+                        if is_manual and manual_base_stats and manual_current_stats:
+                            # Reverse-engineered manual character
+                            character = Character.create_reverse_engineered(
+                                name=row["Name"],
+                                base_stats=manual_base_stats,
+                                current_stats=manual_current_stats,
+                                meta=meta,
+                                free_points=free_points,
+                                tier_thresholds=tier_thresholds,
+                                class_history=class_history,
+                                profession_history=profession_history,
+                                item_repository=item_repository
+                            )
+                        elif is_manual:
+                            # Custom manual character
+                            # Use current stats as final stats
+                            current_stats = {}
+                            for stat in STATS:
+                                if stat in row:
+                                    try:
+                                        current_stats[stat] = int(row[stat])
+                                    except ValueError:
+                                        current_stats[stat] = 5
+                                else:
+                                    current_stats[stat] = 5
+                            
+                            character = Character.create_manual(
+                                name=row["Name"],
+                                stats=current_stats,
+                                meta=meta,
+                                free_points=free_points,
+                                tier_thresholds=tier_thresholds,
+                                class_history=class_history,
+                                profession_history=profession_history,
+                                item_repository=item_repository
+                            )
+                        else:
+                            # Regular calculated character - need to reconstruct with stat sources
+                            character = Character(
+                                name=row["Name"],
+                                stats=base_stats,
+                                meta=meta,
+                                free_points=free_points,
+                                tier_thresholds=tier_thresholds,
+                                class_history=class_history,
+                                profession_history=profession_history,
+                                item_repository=item_repository
+                            )
+                            
+                            # Apply loaded stat sources (excluding race which gets recalculated)
+                            character._apply_stat_sources_for_loading(stat_sources)
+                        
+                        # Set loaded validation status and creation history
+                        character.validation_status = validation_status
+                        character.creation_history = creation_history
                         
                         print(f"Character '{character_name}' loaded from {filename}")
+                        print(f"Validation status: {validation_status}")
+                        if creation_history:
+                            print(f"Originally created as: {creation_history.get('original_creation_method', 'unknown')}")
+                        
                         return character
                 
                 print(f"Character '{character_name}' not found in {filename}")
@@ -918,313 +1245,11 @@ class CharacterSerializer:
             print(f"Error loading character: {e}")
             return None
 
-class Character:
-    """Main character class that coordinates all subsystems"""
-    
-    def __init__(self, name: str, stats: Optional[Dict[str, int]] = None, 
-                 meta: Optional[Dict[str, str]] = None, free_points: int = 0,
-                 stat_sources: Optional[Dict[str, Dict[str, int]]] = None,
-                 item_repository = None, blessing: Optional[Dict[str, int]] = None):
-        self.name = name
-        
-        # Initialize all systems
-        self.data_manager = CharacterDataManager(stats, meta)
-        self.inventory = Inventory(item_repository)
-        self.level_system = LevelSystem(self.data_manager)
-        self.health_manager = HealthManager(self.data_manager)
-        self.combat_system = CombatSystem(self.data_manager, self.health_manager)
-        
-        # Set free points
-        self.level_system.free_points = free_points
-        
-        # If stat sources are provided, apply them directly
-        if stat_sources:
-            for stat in STATS:
-                if stat in stat_sources:
-                    for source, value in stat_sources[stat].items():
-                        if source != StatSource.BASE:  # Base stats already set in data_manager init
-                            self.data_manager.add_stat(stat, value, source)
-        else:
-            # No stat sources provided, calculate everything from levels
-            self._calculate_and_apply_level_stats()
-        
-        # Set finesse based on class
-        self._update_finesse()
-        
-        # Apply blessing if provided (stored at character level for tracking)
-        self.blessing = None
-        if blessing:
-            self.add_blessing(blessing)
-    
-    def _calculate_and_apply_level_stats(self):
-        """Calculate and apply stat gains based on current class/profession levels"""
-        # Use the LevelSystem to calculate all level bonuses
-        self.level_system.calculate_all_level_bonuses()
-        
-        # Update health
-        self.health_manager.update_max_health()
-    
-    def _update_finesse(self) -> None:
-        """Update finesse setting based on class"""
-        class_name = self.data_manager.get_meta("Class", "").lower()
-        self.combat_system.set_finesse(class_name == "light warrior")
-    
-    def update_meta(self, key: str, value: Any) -> bool:
-        """Update meta information with validation and cascading updates"""
-        if key not in META_INFO:
-            print(f"Invalid meta info: {key}")
-            return False
-        
-        # Handle special cases
-        if key in DERIVED_META:
-            print(f"Cannot directly update {key} as it is a derived attribute.")
-            return False
-        
-        # Store old value
-        old_value = self.data_manager.get_meta(key)
-        
-        # Update meta info
-        try:
-            changed = self.data_manager.set_meta(key, value)
-            
-            # Handle specific meta changes
-            if changed:
-                if key == "Class":
-                    # Class changed, update finesse and recalculate class bonuses
-                    self._update_finesse()
-                    
-                    # Recalculate class bonuses if character has class levels
-                    self.level_system.change_class(value)
-                    
-                    # Update race level which depends on class level
-                    self.level_system._update_race_level()
-                
-                elif key == "Profession":
-                    # Profession changed, recalculate profession bonuses
-                    self.level_system.change_profession(value)
-                    
-                    # Update race level which depends on profession level
-                    self.level_system._update_race_level()
-                
-                elif key == "Race":
-                    # Race changed, recalculate race bonuses
-                    self.level_system.change_race(value)
-            
-            # Update health if needed
-            self.health_manager.update_max_health()
-            
-            return True
-        except ValueError as e:
-            print(f"Error updating meta: {e}")
-            return False
-    
-    def update_stat(self, stat: str, value: int) -> bool:
-        """Update a base stat directly"""
-        try:
-            self.data_manager.set_base_stat(stat, value)
-            self.health_manager.update_max_health()
-            return True
-        except ValueError as e:
-            print(f"Error updating stat: {e}")
-            return False
-    
-    def level_up(self, level_type: str, target_level: int) -> bool:
-        """Level up character in specified category"""
-        result = self.level_system.level_up(level_type, target_level)
-        if result:
-            self.health_manager.update_max_health(reason="level_up")
-        return result
-    
-    def equip_item(self, item_name: str) -> bool:
-        """Equip an item and apply its stats"""
-        success, item = self.inventory.equip_item(item_name)
-        if success and item:
-            # Apply item stats
-            self.data_manager.apply_item_stats(item.stats)
-            
-            # Update health if vitality changed
-            self.health_manager.update_max_health(reason="item")
-            return True
-        return False
-    
-    def unequip_item(self, item_name: str) -> bool:
-        """Unequip an item and remove its stats"""
-        success, item = self.inventory.unequip_item(item_name)
-        if success and item:
-            # Remove item stats
-            self.data_manager.remove_item_stats(item.stats)
-            
-            # Update health if vitality changed
-            self.health_manager.update_max_health(reason="item")
-            return True
-        return False
-    
-    def add_blessing(self, blessing_stats: Dict[str, int]) -> None:
-        """Add a blessing with stat bonuses"""
-        if not blessing_stats:
-            return
-        
-        # If there's already a blessing, remove it
-        if self.blessing:
-            self.remove_blessing()
-        
-        self.blessing = blessing_stats.copy()
-        self.data_manager.apply_blessing(blessing_stats)
-        self.health_manager.update_max_health(reason="blessing")
-    
-    def remove_blessing(self) -> None:
-        """Remove current blessing if any"""
-        if self.blessing:
-            self.data_manager.remove_blessing(self.blessing)
-            self.blessing = None
-            self.health_manager.update_max_health(reason="blessing")
-    
-    def attack(self, target) -> Tuple[bool, int, int]:
-        """Perform attack on another character"""
-        return self.combat_system.attack(target)
-    
-    def allocate_free_points(self, stat: str, amount: int) -> bool:
-        """Allocate free points to a specific stat"""
-        success = self.level_system.allocate_free_points(stat, amount)
-        if success:
-            self.health_manager.update_max_health()
-        return success
-    
-    def allocate_random(self) -> None:
-        """Randomly allocate all free points"""
-        self.level_system.allocate_random()
-        self.health_manager.update_max_health()
-        
-    def validate_stats(self) -> Dict[str, Any]:
-        """Validate character stats and return detailed results."""
-        validator = StatValidator(self)
-        return validator.validate()
-    
-    def save(self, filename: str, mode: str = "a") -> bool:
-        """Save character to file"""
-        return CharacterSerializer.save_to_csv(self, filename, mode)
-    
-    @classmethod
-    def load(cls, filename: str, character_name: str, item_repository = None):
-        """Load character from file"""
-        return CharacterSerializer.load_from_csv(filename, character_name, item_repository)
-    
-    def reset_health(self) -> None:
-        """Reset character health to maximum"""
-        self.health_manager.reset_health()
-    
-    def is_alive(self) -> bool:
-        """Check if character is alive"""
-        return self.health_manager.is_alive()
-        
-    def __str__(self) -> str:
-        """String representation of character"""
-        meta = self.data_manager.get_all_meta()
-        stats = self.data_manager.get_all_stats()
-        modifiers = self.data_manager.get_all_modifiers()
-        
-        # Format meta info
-        meta_str = ", ".join(f"{key}: {value}" for key, value in meta.items())
-        
-        # Format stats
-        stats_str = []
-        for stat in STATS:
-            sources = self.data_manager.get_stat_sources(stat)
-            current = stats[stat]
-            modifier = modifiers[stat]
-            
-            # Format source breakdown if more than just base
-            if len(sources) > 1:
-                source_str = " (" + " + ".join(f"{source}: {value}" for source, value in sources.items() if source != StatSource.BASE and value != 0) + ")"
-                stats_str.append(f"{stat}: {sources.get(StatSource.BASE, 0)}{source_str} = {current} (modifier: {modifier})")
-            else:
-                stats_str.append(f"{stat}: {current} (modifier: {modifier})")
-        
-        stats_display = ", ".join(stats_str)
-        
-        # Format free points info
-        free_points_str = f"\nFree points: {self.level_system.free_points}" if self.level_system.free_points > 0 else ""
-        
-        # Format blessing info
-        blessing_str = ""
-        if self.blessing:
-            blessing_details = ", ".join(f"{stat}: +{value}" for stat, value in self.blessing.items())
-            blessing_str = f"\nBlessing: {blessing_details}"
-        
-        return (
-            f"Character: {self.name}\n"
-            f"Info: {meta_str}\n"
-            f"Stats: {stats_display}\n"
-            f"Health: {self.health_manager.current_health}/{self.health_manager.max_health}"
-            f"{free_points_str}"
-            f"{blessing_str}\n"
-            f"Inventory: {self.inventory}"
-        )
-
-class ItemRepository:
-    """Repository of all available items"""
-    
-    def __init__(self, items_data: Dict = None):
-        self.items = items_data or {}
-    
-    def get_item(self, item_name: str) -> Optional[Dict]:
-        """Get item data by name"""
-        return self.items.get(item_name.lower())
-    
-    def add_item(self, name: str, description: str, stats: Dict[str, int]) -> None:
-        """Add a new item to the repository"""
-        self.items[name.lower()] = {
-            "description": description,
-            "stats": stats
-        }
-    
-    def remove_item(self, item_name: str) -> bool:
-        """Remove an item from the repository"""
-        if item_name.lower() in self.items:
-            del self.items[item_name.lower()]
-            return True
-        return False
-    
-    def save_to_json(self, filename: str) -> bool:
-        """Save item repository to JSON file"""
-        try:
-            with open(filename, 'w') as f:
-                json.dump(self.items, f, indent=2)
-            return True
-        except Exception as e:
-            print(f"Error saving items: {e}")
-            return False
-    
-    @classmethod
-    def load_from_json(cls, filename: str):
-        """Load item repository from JSON file"""
-        try:
-            with open(filename, 'r') as f:
-                items_data = json.load(f)
-            return cls(items_data)
-        except Exception as e:
-            print(f"Error loading items: {e}")
-            return cls()
-    
-    def list_items(self) -> List[str]:
-        """Get list of all item names"""
-        return list(self.items.keys())
-    
-    def __str__(self) -> str:
-        """String representation of item repository"""
-        if not self.items:
-            return "No items available"
-        
-        result = []
-        for name, data in self.items.items():
-            stats_str = ", ".join(f"{stat}: +{val}" for stat, val in data["stats"].items()) if data["stats"] else "No stats"
-            result.append(f"{name.title()}: {data['description']} ({stats_str})")
-        
-        return "\n".join(result)
-
 class StatValidator:
     """
-    Validates a character's stats against expected values based on their attributes.
+    Comprehensive validation and stat analysis system.
+    Handles validation for calculated characters, custom manual characters, 
+    and reverse-engineered manual characters.
     """
     
     def __init__(self, character):
@@ -1235,14 +1260,185 @@ class StatValidator:
             character: The character to validate
         """
         self.character = character
-        # No need to import game_data as it's already available in the main script
     
     def validate(self) -> Dict[str, Any]:
         """
-        Validate the character's stats and return detailed results.
+        Main validation entry point.
+        Performs validation and updates character's validation status.
+        """
+        if self.character.is_manual_character:
+            result = self._validate_manual_character()
+        else:
+            result = self._validate_calculated_character()
+        
+        # Update character's validation status based on results
+        self.character.validation_status = "valid" if result["valid"] else "invalid"
+        
+        return result
+    
+    def _validate_manual_character(self) -> Dict[str, Any]:
+        """
+        Validate manual character - routes to custom or reverse-engineered validation.
         
         Returns:
-            A dictionary containing validation results including any discrepancies
+            Validation results appropriate for the manual character type
+        """
+        # Check if we have reverse engineering data
+        if self.character.manual_base_stats and self.character.manual_current_stats:
+            # This character should follow progression rules
+            return self._validate_reverse_engineered_character()
+        else:
+            # This is a completely custom character - minimal validation
+            return self._validate_custom_character()
+    
+    def _validate_custom_character(self) -> Dict[str, Any]:
+        """
+        Validate a completely custom character with minimal checks.
+        
+        Returns:
+            Basic validation results for custom character
+        """
+        result = {
+            "valid": True,
+            "stat_discrepancies": {},
+            "free_points": "N/A - Custom Character",
+            "overall_summary": "Custom character - no progression validation performed",
+            "details": {},
+            "validation_type": "custom_manual"
+        }
+        
+        # Only basic sanity checks
+        warnings = []
+        errors = []
+        
+        # 1. Check race level calculation (only thing that should be calculated)
+        class_level = int(self.character.data_manager.get_meta("Class level", "0"))
+        profession_level = int(self.character.data_manager.get_meta("Profession level", "0"))
+        expected_race_level = (class_level + profession_level) // 2
+        actual_race_level = int(self.character.data_manager.get_meta("Race level", "0"))
+        
+        if expected_race_level != actual_race_level:
+            errors.append(f"Race level calculation error: expected {expected_race_level}, actual {actual_race_level}")
+            result["valid"] = False
+        
+        # 2. Basic stat sanity checks
+        for stat in STATS:
+            value = self.character.data_manager.get_stat(stat)
+            if value < 0:
+                errors.append(f"{stat} cannot be negative: {value}")
+                result["valid"] = False
+            elif value > 10000:  # Very generous upper limit
+                warnings.append(f"{stat} is extremely high: {value}")
+        
+        # 3. Check free points are non-negative
+        if self.character.level_system.free_points < 0:
+            errors.append(f"Free points cannot be negative: {self.character.level_system.free_points}")
+            result["valid"] = False
+        
+        # Store detailed validation results
+        result["custom_validation"] = {
+            "race_level_correct": expected_race_level == actual_race_level,
+            "stats_reasonable": all(0 <= self.character.data_manager.get_stat(stat) <= 10000 for stat in STATS),
+            "free_points_valid": self.character.level_system.free_points >= 0,
+            "warnings": warnings,
+            "errors": errors
+        }
+        
+        # Summary
+        if errors:
+            result["valid"] = False
+            result["overall_summary"] = f"Custom character has {len(errors)} error(s)"
+        elif warnings:
+            result["overall_summary"] = f"Custom character OK with {len(warnings)} warning(s)"
+        else:
+            result["overall_summary"] = "Custom character - all basic checks passed"
+        
+        return result
+    
+    def _validate_reverse_engineered_character(self) -> Dict[str, Any]:
+        """
+        Validate a reverse-engineered manual character with full progression validation.
+        
+        Returns:
+            Complete validation results including reverse engineering analysis
+        """
+        result = {
+            "valid": True,
+            "stat_discrepancies": {},
+            "free_points": {},
+            "overall_summary": "",
+            "details": {},
+            "validation_type": "reverse_engineered_manual"
+        }
+        
+        base_stats = self.character.manual_base_stats
+        current_stats = self.character.manual_current_stats
+        
+        # Perform reverse engineering analysis
+        analysis = self.reverse_engineer_stat_allocation(base_stats, current_stats)
+        
+        # Validate that the character's actual stats match the provided current stats
+        calculated_stats = self.character.data_manager.get_all_stats()
+        stat_discrepancies = {}
+        
+        for stat in STATS:
+            expected = current_stats.get(stat, 0)
+            actual = calculated_stats.get(stat, 0)
+            
+            if expected != actual:
+                result["valid"] = False
+                stat_discrepancies[stat] = {
+                    "provided_current": expected,
+                    "calculated_current": actual,
+                    "difference": actual - expected
+                }
+        
+        result["stat_discrepancies"] = stat_discrepancies
+        
+        # Validate free points math
+        expected_remaining = analysis["remaining_free_points"]
+        actual_remaining = self.character.level_system.free_points
+        
+        result["free_points"] = {
+            "expected_total": analysis["total_expected_free_points"],
+            "used_in_allocation": analysis["total_free_points_used"],
+            "calculated_remaining": expected_remaining,
+            "actual_remaining": actual_remaining,
+            "free_points_match": expected_remaining == actual_remaining
+        }
+        
+        if expected_remaining != actual_remaining:
+            result["valid"] = False
+        
+        # Check for impossible allocations (negative requirements)
+        for stat, stat_analysis in analysis["stat_allocations"].items():
+            if stat_analysis["discrepancy"] < 0:
+                result["valid"] = False
+                if stat not in stat_discrepancies:
+                    stat_discrepancies[stat] = {}
+                stat_discrepancies[stat]["impossible_allocation"] = stat_analysis["discrepancy"]
+        
+        result["details"] = analysis
+        
+        # Generate summary
+        if result["valid"]:
+            result["overall_summary"] = "Reverse-engineered character follows progression rules correctly"
+        else:
+            errors = []
+            if stat_discrepancies:
+                errors.append(f"{len(stat_discrepancies)} stat issues")
+            if not result["free_points"]["free_points_match"]:
+                errors.append("free points mismatch")
+            result["overall_summary"] = f"Reverse-engineered character has problems: {', '.join(errors)}"
+        
+        return result
+    
+    def _validate_calculated_character(self) -> Dict[str, Any]:
+        """
+        Validate a character with calculated stats (full progression validation).
+        
+        Returns:
+            Complete validation results for calculated character
         """
         # Initialize result dictionary
         result = {
@@ -1255,7 +1451,8 @@ class StatValidator:
                 "difference": 0
             },
             "overall_summary": "",
-            "details": {}
+            "details": {},
+            "validation_type": "calculated"
         }
         
         # Calculate expected stats from each source
@@ -1350,12 +1547,141 @@ class StatValidator:
         }
         
         # Create human-readable summary
-        result["overall_summary"] = self._create_summary(result)
+        result["overall_summary"] = self._create_calculated_summary(result)
         
         return result
     
-    def _create_summary(self, result: Dict[str, Any]) -> str:
-        """Create a human-readable summary of the validation results."""
+    def calculate_expected_bonuses(self) -> Dict[str, Any]:
+        """
+        Calculate expected stat bonuses from class/profession/race progression.
+        This is the single source of truth for bonus calculations.
+        
+        Returns:
+            Dictionary containing expected bonuses from all sources
+        """
+        bonuses = {
+            "class": {stat: 0 for stat in STATS},
+            "profession": {stat: 0 for stat in STATS}, 
+            "race": {stat: 0 for stat in STATS},
+            "class_free_points": 0,
+            "profession_free_points": 0,
+            "race_free_points": 0
+        }
+        
+        # Calculate class bonuses
+        class_level = int(self.character.data_manager.get_meta("Class level", "0"))
+        if class_level > 0:
+            for level in range(1, class_level + 1):
+                class_name = self.character.data_manager.get_class_at_level(level)
+                if class_name:
+                    tier = self.character.data_manager.get_tier_for_level(level)
+                    gains = get_class_gains(class_name, tier)
+                    for stat, gain in gains.items():
+                        if stat == "free_points":
+                            bonuses["class_free_points"] += gain
+                        elif stat in STATS:
+                            bonuses["class"][stat] += gain
+        
+        # Calculate profession bonuses
+        profession_level = int(self.character.data_manager.get_meta("Profession level", "0"))
+        if profession_level > 0:
+            for level in range(1, profession_level + 1):
+                profession_name = self.character.data_manager.get_profession_at_level(level)
+                if profession_name:
+                    tier = self.character.data_manager.get_tier_for_level(level)
+                    gains = get_profession_gains(profession_name, tier)
+                    for stat, gain in gains.items():
+                        if stat == "free_points":
+                            bonuses["profession_free_points"] += gain
+                        elif stat in STATS:
+                            bonuses["profession"][stat] += gain
+        
+        # Calculate race bonuses
+        race_name = self.character.data_manager.get_meta("Race", "").lower()
+        race_level = int(self.character.data_manager.get_meta("Race level", "0"))
+        if race_name and race_level > 0 and race_name in races:
+            race_data = races[race_name]
+            rank_ranges = race_data.get("rank_ranges", [])
+            
+            for level in range(1, race_level + 1):
+                for range_data in sorted(rank_ranges, key=lambda x: x["min_level"]):
+                    if range_data["min_level"] <= level <= range_data["max_level"]:
+                        for stat, gain in range_data.get("stats", {}).items():
+                            if stat == "free_points":
+                                bonuses["race_free_points"] += gain
+                            elif stat in STATS:
+                                bonuses["race"][stat] += gain
+                        break
+        
+        return bonuses
+    
+    def reverse_engineer_stat_allocation(self, base_stats: Dict[str, int], 
+                                       current_stats: Dict[str, int]) -> Dict[str, Any]:
+        """
+        Reverse-engineer how stats were allocated based on base and current stats.
+        
+        Args:
+            base_stats: The character's base stats before any bonuses
+            current_stats: The character's final stats after all bonuses
+            
+        Returns:
+            Dictionary containing allocation analysis and validation data
+        """
+        expected_bonuses = self.calculate_expected_bonuses()
+        
+        # Calculate total expected free points
+        total_expected_free_points = (
+            expected_bonuses["class_free_points"] + 
+            expected_bonuses["profession_free_points"] + 
+            expected_bonuses["race_free_points"]
+        )
+        
+        # Analyze each stat
+        allocation_analysis = {
+            "stat_allocations": {},
+            "total_free_points_used": 0,
+            "expected_bonuses": expected_bonuses,
+            "total_expected_free_points": total_expected_free_points
+        }
+        
+        total_free_points_used = 0
+        
+        for stat in STATS:
+            base = base_stats.get(stat, 5)
+            current = current_stats.get(stat, base)
+            
+            # Calculate expected from progression bonuses
+            expected_from_progression = (
+                base + 
+                expected_bonuses["class"].get(stat, 0) + 
+                expected_bonuses["profession"].get(stat, 0) + 
+                expected_bonuses["race"].get(stat, 0)
+            )
+            
+            # The difference must be from free points, items, or blessings
+            free_points_allocated = current - expected_from_progression
+            
+            allocation_analysis["stat_allocations"][stat] = {
+                "base": base,
+                "class_bonus": expected_bonuses["class"].get(stat, 0),
+                "profession_bonus": expected_bonuses["profession"].get(stat, 0),
+                "race_bonus": expected_bonuses["race"].get(stat, 0),
+                "expected_from_progression": expected_from_progression,
+                "current": current,
+                "free_points_allocated": max(0, free_points_allocated),  # Can't be negative
+                "discrepancy": free_points_allocated if free_points_allocated < 0 else 0
+            }
+            
+            if free_points_allocated > 0:
+                total_free_points_used += free_points_allocated
+        
+        allocation_analysis["total_free_points_used"] = total_free_points_used
+        allocation_analysis["remaining_free_points"] = max(0, total_expected_free_points - total_free_points_used)
+        
+        return allocation_analysis
+    
+    def _create_calculated_summary(self, result: Dict[str, Any]) -> str:
+        """Create a human-readable summary of calculated character validation results."""
         if result["valid"]:
             return "Character stats are valid. All stats are properly allocated."
         
@@ -1409,25 +1735,26 @@ class StatValidator:
         stats = {stat: 0 for stat in STATS}
         stats["free_points"] = 0
         
-        class_name = self.character.data_manager.get_meta("Class", "").lower()
         class_level = int(self.character.data_manager.get_meta("Class level", "0"))
-        
-        if not class_name or class_level <= 0:
+        if class_level <= 0:
             return stats
         
-        # Apply tier 1 class bonuses (levels 1-24)
-        tier1_limit = min(class_level, 24)
-        if tier1_limit > 0 and class_name in tier1_class_gains:  # Using global game_data
-            tier1_gains = tier1_class_gains[class_name]
-            for stat, gain_per_level in tier1_gains.items():
-                stats[stat] += gain_per_level * tier1_limit
-        
-        # Apply tier 2 class bonuses (levels 25+)
-        tier2_levels = max(0, class_level - 24)
-        if tier2_levels > 0 and class_name in tier2_class_gains:  # Using global game_data
-            tier2_gains = tier2_class_gains[class_name]
-            for stat, gain_per_level in tier2_gains.items():
-                stats[stat] += gain_per_level * tier2_levels
+        # Apply stat gains for each level based on the class active at that level
+        for level in range(1, class_level + 1):
+            class_name = self.character.data_manager.get_class_at_level(level)
+            if not class_name:
+                continue
+                
+            # Get the tier for this level
+            tier = self.character.data_manager.get_tier_for_level(level)
+            
+            # Get gains for this class and tier
+            gains = get_class_gains(class_name, tier)
+            
+            # Apply the gains
+            for stat, gain in gains.items():
+                if stat in stats:
+                    stats[stat] += gain
         
         return stats
     
@@ -1436,25 +1763,26 @@ class StatValidator:
         stats = {stat: 0 for stat in STATS}
         stats["free_points"] = 0
         
-        profession_name = self.character.data_manager.get_meta("Profession", "").lower()
         profession_level = int(self.character.data_manager.get_meta("Profession level", "0"))
-        
-        if not profession_name or profession_level <= 0:
+        if profession_level <= 0:
             return stats
         
-        # Apply tier 1 profession bonuses (levels 1-24)
-        tier1_limit = min(profession_level, 24)
-        if tier1_limit > 0 and profession_name in tier1_profession_gains:  # Using global game_data
-            tier1_gains = tier1_profession_gains[profession_name]
-            for stat, gain_per_level in tier1_gains.items():
-                stats[stat] += gain_per_level * tier1_limit
-        
-        # Apply tier 2 profession bonuses (levels 25+)
-        tier2_levels = max(0, profession_level - 24)
-        if tier2_levels > 0 and profession_name in tier2_profession_gains:  # Using global game_data
-            tier2_gains = tier2_profession_gains[profession_name]
-            for stat, gain_per_level in tier2_gains.items():
-                stats[stat] += gain_per_level * tier2_levels
+        # Apply stat gains for each level based on the profession active at that level
+        for level in range(1, profession_level + 1):
+            profession_name = self.character.data_manager.get_profession_at_level(level)
+            if not profession_name:
+                continue
+                
+            # Get the tier for this level
+            tier = self.character.data_manager.get_tier_for_level(level)
+            
+            # Get gains for this profession and tier
+            gains = get_profession_gains(profession_name, tier)
+            
+            # Apply the gains
+            for stat, gain in gains.items():
+                if stat in stats:
+                    stats[stat] += gain
         
         return stats
     
@@ -1466,18 +1794,25 @@ class StatValidator:
         race_name = self.character.data_manager.get_meta("Race", "").lower()
         race_level = int(self.character.data_manager.get_meta("Race level", "0"))
         
-        if not race_name or race_level <= 0 or race_name not in races:  # Using global game_data
+        if not race_name or race_level <= 0 or race_name not in races:
             return stats
         
         race_data = races[race_name]
         rank_ranges = race_data.get("rank_ranges", [])
         
+        if not rank_ranges:
+            return stats
+
+        # Sort ranges by min_level for correct application (matches LevelSystem behavior)
+        sorted_ranges = sorted(rank_ranges, key=lambda x: x["min_level"])
+
         # For each level, find the applicable rank range and apply stats
         for level in range(1, race_level + 1):
-            for range_data in rank_ranges:
+            for range_data in sorted_ranges:
                 if range_data["min_level"] <= level <= range_data["max_level"]:
                     for stat, gain in range_data.get("stats", {}).items():
-                        stats[stat] += gain
+                        if stat in stats:  # Explicit check for valid stats including free_points
+                            stats[stat] += gain
                     break
         
         return stats
@@ -1503,3 +1838,532 @@ class StatValidator:
                     stats[stat] += value
         
         return stats
+
+class Character:
+    """
+    Main character class with factory methods for different creation types.
+    Use factory methods instead of calling constructor directly.
+    """
+    
+    def __init__(self, name: str, stats: Dict[str, int], meta: Dict[str, str], 
+                 free_points: int = 0, tier_thresholds: Optional[List[int]] = None,
+                 class_history: Optional[List[Dict[str, Any]]] = None,
+                 profession_history: Optional[List[Dict[str, Any]]] = None,
+                 item_repository=None, blessing: Optional[Dict[str, int]] = None):
+        """
+        Private constructor - use factory methods instead.
+        Only sets up basic character structure without any calculations.
+        """
+        self.name = name
+        
+        # Initialize manual character attributes
+        self.is_manual_character = False
+        self.manual_base_stats = None
+        self.manual_current_stats = None
+        
+        # Initialize validation status
+        self.validation_status = "unvalidated"  # unvalidated, valid, invalid
+        
+        # Initialize creation history for converted characters
+        self.creation_history = None
+        
+        # Initialize all systems
+        self.data_manager = CharacterDataManager(
+            stats, meta, tier_thresholds, class_history, profession_history
+        )
+        self.health_manager = HealthManager(self.data_manager)
+        self.inventory = Inventory(item_repository)
+        self.combat_system = CombatSystem(self.data_manager, self.health_manager)
+        self.level_system = LevelSystem(self.data_manager)
+        
+        # Set free points
+        self.level_system.free_points = free_points
+        
+        # Set finesse based on class
+        self._update_finesse()
+        
+        # Apply blessing if provided
+        if blessing:
+            self.add_blessing(blessing)
+    
+    @classmethod
+    def create_calculated(cls, name: str, stats: Dict[str, int], meta: Dict[str, str],
+                         tier_thresholds: Optional[List[int]] = None,
+                         class_history: Optional[List[Dict[str, Any]]] = None,
+                         profession_history: Optional[List[Dict[str, Any]]] = None,
+                         item_repository=None, blessing: Optional[Dict[str, int]] = None):
+        """
+        Create a character with calculated progression bonuses.
+        Stats should be base stats only - bonuses will be calculated and applied.
+        """
+        character = cls(
+            name=name,
+            stats=stats,
+            meta=meta,
+            tier_thresholds=tier_thresholds,
+            class_history=class_history,
+            profession_history=profession_history,
+            item_repository=item_repository,
+            blessing=blessing
+        )
+        
+        # Apply calculations if character has levels
+        if (int(character.data_manager.get_meta("Class level", "0")) > 0 or 
+            int(character.data_manager.get_meta("Profession level", "0")) > 0):
+            character._calculate_and_apply_level_stats()
+        
+        return character
+    
+    @classmethod
+    def create_manual(cls, name: str, stats: Dict[str, int], meta: Dict[str, str],
+                     free_points: int = 0, tier_thresholds: Optional[List[int]] = None,
+                     class_history: Optional[List[Dict[str, Any]]] = None,
+                     profession_history: Optional[List[Dict[str, Any]]] = None,
+                     item_repository=None, blessing: Optional[Dict[str, int]] = None):
+        """
+        Create a custom manual character with no progression calculations.
+        Stats are used as-is, only race level is calculated.
+        """
+        character = cls(
+            name=name,
+            stats=stats,
+            meta=meta,
+            free_points=free_points,
+            tier_thresholds=tier_thresholds,
+            class_history=class_history,
+            profession_history=profession_history,
+            item_repository=item_repository,
+            blessing=blessing
+        )
+        
+        # Mark as manual character and only calculate race level
+        character.is_manual_character = True
+        character.level_system._update_race_level(apply_bonuses=True)
+        
+        return character
+    
+    @classmethod
+    def create_reverse_engineered(cls, name: str, base_stats: Dict[str, int], 
+                                 current_stats: Dict[str, int], meta: Dict[str, str],
+                                 free_points: int = 0, tier_thresholds: Optional[List[int]] = None,
+                                 class_history: Optional[List[Dict[str, Any]]] = None,
+                                 profession_history: Optional[List[Dict[str, Any]]] = None,
+                                 item_repository=None, blessing: Optional[Dict[str, int]] = None):
+        """
+        Create a manual character that follows progression rules via reverse engineering.
+        Base stats and current stats are used to calculate stat allocation.
+        """
+        character = cls(
+            name=name,
+            stats=base_stats,  # Start with base stats
+            meta=meta,
+            free_points=free_points,
+            tier_thresholds=tier_thresholds,
+            class_history=class_history,
+            profession_history=profession_history,
+            item_repository=item_repository,
+            blessing=blessing
+        )
+        
+        # Mark as manual character and store reverse engineering data
+        character.is_manual_character = True
+        character.manual_base_stats = base_stats
+        character.manual_current_stats = current_stats
+        
+        # Perform reverse engineering
+        character._setup_reverse_engineering(base_stats, current_stats, free_points)
+        
+        return character
+    
+    @classmethod
+    def load_from_file(cls, filename: str, character_name: str, item_repository=None):
+        """Load character from CSV file."""
+        return CharacterSerializer.load_from_csv(filename, character_name, item_repository)
+    
+    def _setup_reverse_engineering(self, base_stats: Dict[str, int], 
+                                 current_stats: Dict[str, int], provided_free_points: int):
+        """Set up character using reverse engineering analysis."""
+        
+        # 1. Calculate race level only (no bonuses)
+        self.level_system._update_race_level(apply_bonuses=False)
+        
+        # 2. Use StatValidator to perform reverse engineering
+        validator = StatValidator(self)
+        analysis = validator.reverse_engineer_stat_allocation(base_stats, current_stats)
+        
+        # 3. Apply the calculated stat allocations
+        self._apply_reverse_engineering_results(analysis, provided_free_points)
+    
+    def _apply_reverse_engineering_results(self, analysis: Dict[str, Any], provided_free_points: int):
+        """Apply the results of reverse engineering to the character."""
+        expected_bonuses = analysis["expected_bonuses"]
+        
+        # Apply calculated bonuses
+        for stat in STATS:
+            class_bonus = expected_bonuses["class"].get(stat, 0)
+            profession_bonus = expected_bonuses["profession"].get(stat, 0)
+            race_bonus = expected_bonuses["race"].get(stat, 0)
+            
+            if class_bonus > 0:
+                self.data_manager.add_stat(stat, class_bonus, StatSource.CLASS)
+            if profession_bonus > 0:
+                self.data_manager.add_stat(stat, profession_bonus, StatSource.PROFESSION)
+            if race_bonus > 0:
+                self.data_manager.add_stat(stat, race_bonus, StatSource.RACE)
+        
+        # Apply free point allocations
+        for stat, stat_analysis in analysis["stat_allocations"].items():
+            free_points_allocated = stat_analysis["free_points_allocated"]
+            if free_points_allocated > 0:
+                self.data_manager.add_stat(stat, free_points_allocated, StatSource.FREE_POINTS)
+        
+        # Set remaining free points
+        self.level_system.free_points = provided_free_points
+    
+    def _calculate_and_apply_level_stats(self):
+        """Calculate and apply stat gains based on current class/profession levels."""
+        # Apply class level gains
+        class_level = int(self.data_manager.get_meta("Class level", "0"))
+        if class_level > 0:
+            for level in range(1, class_level + 1):
+                self.level_system._apply_class_level_up(level)
+        
+        # Apply profession level gains
+        profession_level = int(self.data_manager.get_meta("Profession level", "0"))
+        if profession_level > 0:
+            for level in range(1, profession_level + 1):
+                self.level_system._apply_profession_level_up(level)
+        
+        # Update race level after class/profession calculations
+        self.level_system._update_race_level()
+        
+        # Update health
+        self.health_manager.update_max_health()
+    
+    def _apply_stat_sources_for_loading(self, stat_sources: Dict[str, Dict[str, int]]) -> None:
+        """Apply stat sources when loading a character (existing logic)."""
+        # Apply all stat sources EXCEPT race bonuses
+        for stat in STATS:
+            if stat in stat_sources:
+                for source, value in stat_sources[stat].items():
+                    if source != StatSource.BASE and source != StatSource.RACE:
+                        self.data_manager.add_stat(stat, value, source)
+        
+        # Recalculate race bonuses but don't touch free points
+        self.level_system.recalculate_race_levels(skip_free_points=True)
+        
+        # Update health after all stats are applied
+        self.health_manager.update_max_health()
+    
+    def _update_finesse(self) -> None:
+        """Update finesse setting based on class."""
+        class_name = self.data_manager.get_meta("Class", "").lower()
+        self.combat_system.set_finesse(class_name in ["light warrior", "thunder puppet's shadow"])
+    
+    # All the existing methods remain the same
+    def update_meta(self, key: str, value: Any) -> bool:
+        """Update meta information with validation and cascading updates."""
+        if key not in META_INFO:
+            print(f"Invalid meta info: {key}")
+            return False
+        
+        if key in DERIVED_META:
+            print(f"Cannot directly update {key} as it is a derived attribute.")
+            return False
+        
+        old_value = self.data_manager.get_meta(key)
+        
+        try:
+            changed = self.data_manager.set_meta(key, value)
+            
+            if changed:
+                if key == "Class":
+                    self._update_finesse()
+                    class_level = int(self.data_manager.get_meta("Class level", "0"))
+                    if class_level > 0:
+                        self.level_system.change_class(value, 1)
+                
+                elif key == "Profession":
+                    profession_level = int(self.data_manager.get_meta("Profession level", "0"))
+                    if profession_level > 0:
+                        self.level_system.change_profession(value, 1)
+                
+                elif key == "Race":
+                    self.level_system.change_race(value)
+                
+                elif key in ["Class level", "Profession level"]:
+                    self.level_system._update_race_level()
+            
+            self.health_manager.update_max_health()
+            return True
+        except ValueError as e:
+            print(f"Error updating meta: {e}")
+            return False
+    
+    def update_stat(self, stat: str, value: int) -> bool:
+        """Update a base stat directly."""
+        try:
+            self.data_manager.set_base_stat(stat, value)
+            self.health_manager.update_max_health()
+            return True
+        except ValueError as e:
+            print(f"Error updating stat: {e}")
+            return False
+    
+    def level_up(self, level_type: str, target_level: int) -> bool:
+        """Level up character in specified category."""
+        result = self.level_system.level_up(level_type, target_level)
+        if result:
+            self.health_manager.update_max_health()
+        return result
+    
+    def change_class(self, new_class: str, at_level: int) -> bool:
+        """Change character's class name and record in history."""
+        success = self.level_system.change_class(new_class, at_level)
+        if success:
+            self._update_finesse()
+        return success
+    
+    def change_profession(self, new_profession: str, at_level: int) -> bool:
+        """Change character's profession name and record in history."""
+        return self.level_system.change_profession(new_profession, at_level)
+    
+    def change_race(self, new_race: str) -> bool:
+        """Change character's race."""
+        return self.level_system.change_race(new_race)
+    
+    def equip_item(self, item_name: str) -> bool:
+        """Equip an item and apply its stats."""
+        success, item = self.inventory.equip_item(item_name)
+        if success and item:
+            self.data_manager.apply_item_stats(item.stats)
+            self.health_manager.update_max_health()
+            return True
+        return False
+    
+    def unequip_item(self, item_name: str) -> bool:
+        """Unequip an item and remove its stats."""
+        success, item = self.inventory.unequip_item(item_name)
+        if success and item:
+            self.data_manager.remove_item_stats(item.stats)
+            self.health_manager.update_max_health()
+            return True
+        return False
+    
+    def add_blessing(self, blessing_stats: Dict[str, int]) -> None:
+        """Add a blessing with stat bonuses."""
+        if not blessing_stats:
+            return
+        
+        self.blessing = blessing_stats.copy()
+        self.data_manager.apply_blessing(blessing_stats)
+        self.health_manager.update_max_health()
+    
+    def remove_blessing(self) -> None:
+        """Remove current blessing if any."""
+        if hasattr(self, 'blessing') and self.blessing:
+            self.data_manager.remove_blessing(self.blessing)
+            self.blessing = None
+            self.health_manager.update_max_health()
+    
+    def attack(self, target) -> Tuple[bool, int, int]:
+        """Perform attack on another character."""
+        return self.combat_system.attack(target)
+    
+    def allocate_free_points(self, stat: str, amount: int) -> bool:
+        """Allocate free points to a specific stat."""
+        success = self.level_system.allocate_free_points(stat, amount)
+        if success:
+            self.health_manager.update_max_health()
+        return success
+    
+    def allocate_random(self) -> None:
+        """Randomly allocate all free points."""
+        self.level_system.allocate_random()
+        self.health_manager.update_max_health()
+    
+    def recalculate_race_levels(self) -> None:
+        """Recalculate race levels from scratch."""
+        self.level_system.recalculate_race_levels()
+        self.health_manager.update_max_health()
+    
+    def save(self, filename: str, mode: str = "a") -> bool:
+        """Save character to file."""
+        return CharacterSerializer.save_to_csv(self, filename, mode)
+    
+    def validate_stats(self) -> Dict[str, Any]:
+        """
+        Validate character stats and automatically convert manual characters if valid.
+        
+        Returns:
+            Validation results including conversion information
+        """
+        validator = StatValidator(self)
+        result = validator.validate()
+        
+        # Auto-convert manual characters that pass validation
+        if (self.is_manual_character and 
+            self.manual_base_stats and 
+            self.manual_current_stats and
+            result["valid"]):
+            
+            conversion_success = self._convert_to_calculated()
+            result["converted_to_calculated"] = conversion_success
+            
+            if conversion_success:
+                result["conversion_message"] = "Manual character automatically converted to calculated character"
+        else:
+            result["converted_to_calculated"] = False
+        
+        return result
+    
+    def _convert_to_calculated(self) -> bool:
+        """
+        Convert a validated manual character to calculated character.
+        Archives original manual data in creation_history.
+        
+        Returns:
+            True if conversion successful, False otherwise
+        """
+        if not self.is_manual_character:
+            return False  # Already calculated
+        
+        if not self.manual_base_stats or not self.manual_current_stats:
+            return False  # No manual data to convert
+        
+        # Archive manual creation data
+        self.creation_history = {
+            "original_creation_method": "manual_reverse_engineered",
+            "original_base_stats": self.manual_base_stats.copy(),
+            "original_current_stats": self.manual_current_stats.copy(),
+            "converted_at": datetime.datetime.now().isoformat(),
+            "conversion_reason": "passed_validation"
+        }
+        
+        # Convert to calculated character
+        self.is_manual_character = False
+        self.manual_base_stats = None
+        self.manual_current_stats = None
+        
+        return True
+    
+    def get_creation_info(self) -> Dict[str, Any]:
+        """Get information about how this character was created."""
+        if self.creation_history:
+            return {
+                "current_type": "calculated (converted)",
+                "original_type": self.creation_history["original_creation_method"],
+                "converted_at": self.creation_history["converted_at"],
+                "conversion_reason": self.creation_history["conversion_reason"]
+            }
+        elif self.is_manual_character:
+            if self.manual_base_stats and self.manual_current_stats:
+                return {"current_type": "manual (reverse-engineered)", "validated": self.validation_status}
+            else:
+                return {"current_type": "manual (custom)", "validated": self.validation_status}
+        else:
+            return {"current_type": "calculated", "validated": self.validation_status}
+    
+    def __str__(self) -> str:
+        """String representation of character."""
+        meta = self.data_manager.get_all_meta()
+        stats = self.data_manager.get_all_stats()
+        modifiers = self.data_manager.get_all_modifiers()
+        
+        # Format meta info
+        meta_str = ", ".join(f"{key}: {value}" for key, value in meta.items())
+        
+        # Format stats
+        stats_str = []
+        for stat in STATS:
+            sources = self.data_manager.get_stat_sources(stat)
+            current = stats[stat]
+            modifier = modifiers[stat]
+            
+            if len(sources) > 1:
+                source_str = " (" + " + ".join(f"{source}: {value}" for source, value in sources.items() if source != StatSource.BASE and value != 0) + ")"
+                stats_str.append(f"{stat}: {sources.get(StatSource.BASE, 0)}{source_str} = {current} (modifier: {modifier})")
+            else:
+                stats_str.append(f"{stat}: {current} (modifier: {modifier})")
+        
+        stats_display = ", ".join(stats_str)
+        
+        # Format free points info
+        free_points_str = f"\nFree points: {self.level_system.free_points}" if self.level_system.free_points > 0 else ""
+        
+        # Format blessing info
+        blessing_str = ""
+        if hasattr(self, 'blessing') and self.blessing:
+            blessing_details = ", ".join(f"{stat}: +{value}" for stat, value in self.blessing.items())
+            blessing_str = f"\nBlessing: {blessing_details}"
+        
+        return (
+            f"Character: {self.name}\n"
+            f"Info: {meta_str}\n"
+            f"Stats: {stats_display}\n"
+            f"Health: {self.health_manager.current_health}/{self.health_manager.max_health}"
+            f"{free_points_str}"
+            f"{blessing_str}\n"
+            f"Inventory: {self.inventory}"
+        )
+
+class ItemRepository:
+    """Repository of all available items"""
+    
+    def __init__(self, items_data: Dict = None):
+        self.items = items_data or {}
+    
+    def get_item(self, item_name: str) -> Optional[Dict]:
+        """Get item data by name"""
+        return self.items.get(item_name.lower())
+    
+    def add_item(self, name: str, description: str, stats: Dict[str, int]) -> None:
+        """Add a new item to the repository"""
+        self.items[name.lower()] = {
+            "description": description,
+            "stats": stats
+        }
+    
+    def remove_item(self, item_name: str) -> bool:
+        """Remove an item from the repository"""
+        if item_name.lower() in self.items:
+            del self.items[item_name.lower()]
+            return True
+        return False
+    
+    def save_to_json(self, filename: str) -> bool:
+        """Save item repository to JSON file"""
+        try:
+            with open(filename, 'w') as f:
+                json.dump(self.items, f, indent=2)
+            return True
+        except Exception as e:
+            print(f"Error saving items: {e}")
+            return False
+    
+    @classmethod
+    def load_from_json(cls, filename: str):
+        """Load item repository from JSON file"""
+        try:
+            with open(filename, 'r') as f:
+                items_data = json.load(f)
+            return cls(items_data)
+        except Exception as e:
+            print(f"Error loading items: {e}")
+            return cls()
+    
+    def list_items(self) -> List[str]:
+        """Get list of all item names"""
+        return list(self.items.keys())
+    
+    def __str__(self) -> str:
+        """String representation of item repository"""
+        if not self.items:
+            return "No items available"
+        
+        result = []
+        for name, data in self.items.items():
+            stats_str = ", ".join(f"{stat}: +{val}" for stat, val in data["stats"].items()) if data["stats"] else "No stats"
+            result.append(f"{name.title()}: {data['description']} ({stats_str})")
+        
+        return "\n".join(result)
