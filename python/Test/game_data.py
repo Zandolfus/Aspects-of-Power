@@ -569,5 +569,23 @@ races = {
                 "rank": "E",
             },
         ]
+    },    
+    "juvenile astral elf": {
+        "rank_ranges": [
+            {
+                "min_level": 25,
+                "max_level": 99,
+                "stats": {
+                    "willpower": 3,
+                    "perception": 3,
+                    "intelligence": 3,
+                    "vitality": 3,
+                    "dexterity": 3,
+                    "wisdom": 3,
+                    "free_points": 5,
+                    },
+                "rank": "E",
+            },
+        ]
     },
 }
