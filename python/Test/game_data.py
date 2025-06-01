@@ -433,6 +433,13 @@ profession_gains = {
         "high justiciar": {
             "free_points": 18
         },
+        "mana-jeweler of the elements": {
+            "willpower": 5,
+            "wisdom": 4,
+            "intelligence": 3,
+            "vitality": 2,
+            "free_points": 4
+        },
     },
 }
 
