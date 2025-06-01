@@ -187,6 +187,13 @@ class_gains = {
             "strength": 2,
             "free_points": 4,
         },
+        "astral aetherologist": {
+            "intelligence": 5,
+            "willpower": 4,
+            "wisdom": 3,
+            "perception": 2,
+            "free_points": 4
+        },
     },
 }
 
