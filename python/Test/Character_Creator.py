@@ -1336,16 +1336,84 @@ class StatValidator:
         """
         Main validation entry point.
         Performs validation and updates character's validation status.
+        Includes auto-correction for missing free points.
         """
         if self.character.is_manual_character:
             result = self._validate_manual_character()
         else:
             result = self._validate_calculated_character()
         
-        # Update character's validation status based on results
+        # Auto-correct missing free points for progression-based characters
+        correction_applied, points_added, correction_message = self.auto_correct_free_points()
+        
+        if correction_applied:
+            result["free_points_auto_corrected"] = True
+            result["free_points_added"] = points_added
+            result["auto_correction_message"] = correction_message
+            
+            # Re-validate after correction to update validation status
+            if self.character.is_manual_character:
+                updated_result = self._validate_manual_character()
+            else:
+                updated_result = self._validate_calculated_character()
+            
+            # Merge the updated results but keep the auto-correction info
+            updated_result["free_points_auto_corrected"] = True
+            updated_result["free_points_added"] = points_added
+            updated_result["auto_correction_message"] = correction_message
+            result = updated_result
+        else:
+            result["free_points_auto_corrected"] = False
+            result["free_points_added"] = 0
+            result["auto_correction_message"] = correction_message
+        
+        # Update character's validation status based on final results
         self.character.validation_status = "valid" if result["valid"] else "invalid"
         
         return result
+    
+    def auto_correct_free_points(self) -> Tuple[bool, int, str]:
+        """
+        Auto-correct missing free points for progression-based characters.
+        
+        Returns:
+            Tuple of (correction_applied, points_added, message)
+        """
+        # Only auto-correct for characters that follow progression rules
+        if (self.character.is_manual_character and 
+            not (self.character.manual_base_stats and self.character.manual_current_stats)):
+            # Custom manual character - don't auto-correct
+            return False, 0, "Custom manual character - no auto-correction applied"
+        
+        # Calculate expected free points
+        if self.character.is_manual_character:
+            # Reverse-engineered manual character
+            base_stats = self.character.manual_base_stats
+            current_stats = self.character.manual_current_stats
+            analysis = self.reverse_engineer_stat_allocation(base_stats, current_stats)
+            expected_remaining = analysis["remaining_free_points"]
+        else:
+            # Calculated character
+            validation_result = self._validate_calculated_character()
+            if "free_points" not in validation_result:
+                return False, 0, "Unable to determine expected free points"
+            
+            fp_info = validation_result["free_points"]
+            expected_total = fp_info.get("expected_total", 0)
+            spent = fp_info.get("spent", 0)
+            expected_remaining = max(0, expected_total - spent)
+        
+        current_remaining = self.character.level_system.free_points
+        
+        if expected_remaining > current_remaining:
+            # Character is missing free points - auto-correct
+            points_to_add = expected_remaining - current_remaining
+            self.character.level_system.free_points = expected_remaining
+            
+            return True, points_to_add, f"Added {points_to_add} missing free points (from {current_remaining} to {expected_remaining})"
+        else:
+            # Character has correct or excess free points
+            return False, 0, "No free point correction needed"
     
     def _validate_manual_character(self) -> Dict[str, Any]:
         """
@@ -2112,7 +2180,7 @@ class Character:
                 self.data_manager.add_stat(stat, free_points_allocated, StatSource.FREE_POINTS)
         
         # Set remaining free points
-        self.level_system.free_points = provided_free_points
+        self.level_system.free_points = analysis["remaining_free_points"]
         
         # Update health
         self.health_manager.update_max_health()

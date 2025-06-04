@@ -1490,7 +1490,7 @@ def view_race_progression(character: Character):
     pause_screen()
 
 def validate_character_stats(character: Character):
-    """Enhanced validation display with automatic conversion."""
+    """Enhanced validation display with automatic conversion and free point auto-correction."""
     clear_screen()
     print_header(f"Character Validation: {character.name}")
     
@@ -1505,7 +1505,7 @@ def validate_character_stats(character: Character):
     
     print_loading("Validating character stats")
     
-    # Get validation results (this may trigger conversion)
+    # Get validation results (this may trigger conversion and/or auto-correction)
     validation_result = character.validate_stats()
     
     # Check if conversion happened
@@ -1514,6 +1514,16 @@ def validate_character_stats(character: Character):
         print_success("🎉 Manual character automatically converted to calculated character!")
         print_info(validation_result.get("conversion_message", "Character converted successfully"))
         print_warning("Original manual data archived in creation history")
+        print()
+    
+    # Check if free points were auto-corrected
+    if validation_result.get("free_points_auto_corrected", False):
+        points_added = validation_result.get("free_points_added", 0)
+        correction_message = validation_result.get("auto_correction_message", "")
+        print()
+        print_success(f"🔧 Auto-corrected free points: {correction_message}")
+        if points_added > 0:
+            print_info(f"Character now has {points_added} additional free points to allocate")
         print()
     
     # Display validation results
@@ -1553,6 +1563,13 @@ def validate_character_stats(character: Character):
                 status = discrepancy["status"]
                 diff = discrepancy["difference"]
                 print_error(f"{stat}: {status} by {abs(diff)} points")
+    
+    # Show auto-correction details
+    if not validation_result.get("free_points_auto_corrected", False):
+        correction_message = validation_result.get("auto_correction_message", "")
+        if correction_message:
+            print_subheader("Auto-Correction Analysis")
+            print_info(correction_message)
     
     # Show warnings and errors
     if validation_result.get("warnings"):
