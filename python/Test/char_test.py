@@ -16,7 +16,7 @@ from tier_utils import (
     validate_class_tier_combination, validate_profession_tier_combination,
     get_tier_for_level, get_tier_summary
 )
-from game_data import DEFAULT_TIER_THRESHOLDS
+from game_data import DEFAULT_TIER_THRESHOLDS, races
 from Item_Repo import items
 
 # ============================================================================
@@ -631,11 +631,14 @@ def create_reverse_engineered_character(item_repository) -> Character:
             value = input(f"{info}: ").strip()
             meta[info] = value
     
-    # Get class and profession levels for history creation
+    # Calculate race level for race history setup
     class_level = int(meta.get("Class level", "0"))
     profession_level = int(meta.get("Profession level", "0"))
+    calculated_race_level = (class_level + profession_level) // 2
     
-    # Create class history if needed
+    print_info(f"Calculated race level: {calculated_race_level}")
+    
+    # Create class history if needed (existing logic)
     class_history = []
     if class_level > 0:
         current_class = meta.get("Class", "")
@@ -696,7 +699,7 @@ def create_reverse_engineered_character(item_repository) -> Character:
                     "to_level": None
                 })
     
-    # Create profession history if needed
+    # Create profession history if needed (existing logic)
     profession_history = []
     if profession_level > 0:
         current_profession = meta.get("Profession", "")
@@ -757,7 +760,103 @@ def create_reverse_engineered_character(item_repository) -> Character:
                     "to_level": None
                 })
     
-    # Get base stats
+    # NEW: Create race history if needed (following same pattern)
+    race_history = []
+    if calculated_race_level > 0:
+        current_race = meta.get("Race", "")
+        if current_race:
+            print_subheader("Race History Setup")
+            print(f"Character race level: {calculated_race_level}")
+            
+            # Check if character might have multiple races
+            if calculated_race_level > 5:  # Arbitrary threshold where race changes become likely
+                print_info("Characters at higher race levels may have undergone race changes.")
+                has_race_changes = confirm_action("Has this character changed races during their progression?")
+            else:
+                has_race_changes = False
+            
+            if has_race_changes:
+                print("You need to specify the race for different periods of character development:")
+                print("Note: Race levels are calculated as (Class Level + Profession Level) ÷ 2")
+                
+                # Get available races
+                available_races = list(races.keys())
+                print_subheader("Available Races")
+                for i, race in enumerate(available_races, 1):
+                    print(f"  {i}. {race}")
+                
+                race_level_start = 1
+                while race_level_start <= calculated_race_level:
+                    print(f"\nRace from level {race_level_start} to level ?")
+                    
+                    # Get race for this period
+                    while True:
+                        race_choice = input("Enter race (number or name): ").strip()
+                        
+                        # Try to parse as number first
+                        try:
+                            race_num = int(race_choice)
+                            if 1 <= race_num <= len(available_races):
+                                period_race = available_races[race_num - 1]
+                                break
+                            else:
+                                print_error(f"Please enter a number between 1 and {len(available_races)}")
+                                continue
+                        except ValueError:
+                            # Try to match by name
+                            period_race = race_choice.lower()
+                            if period_race in available_races:
+                                break
+                            else:
+                                print_error(f"Invalid race: {race_choice}")
+                                continue
+                    
+                    # Get end level for this race (if not the last period)
+                    if race_level_start < calculated_race_level:
+                        while True:
+                            try:
+                                end_input = input(f"Race level {period_race} ends at level (max {calculated_race_level}): ").strip()
+                                race_level_end = int(end_input)
+                                
+                                if race_level_end < race_level_start:
+                                    print_error("End level must be >= start level.")
+                                    continue
+                                elif race_level_end > calculated_race_level:
+                                    print_error(f"End level cannot exceed {calculated_race_level}.")
+                                    continue
+                                
+                                break
+                            except ValueError:
+                                print_error("Please enter a valid integer.")
+                    else:
+                        race_level_end = None  # Current race
+                    
+                    # Add race history entry
+                    race_history.append({
+                        "race": period_race,
+                        "from_race_level": race_level_start,
+                        "to_race_level": race_level_end
+                    })
+                    
+                    if race_level_end is None:
+                        break
+                    else:
+                        race_level_start = race_level_end + 1
+                
+                # Validate current race matches the last entry
+                if race_history and race_history[-1]["race"] != current_race.lower():
+                    print_warning(f"Current race ({current_race}) doesn't match last race history entry ({race_history[-1]['race']})")
+                    if confirm_action("Update current race to match history?"):
+                        meta["Race"] = race_history[-1]["race"]
+            else:
+                # Single race throughout progression
+                race_history.append({
+                    "race": current_race,
+                    "from_race_level": 1,
+                    "to_race_level": None
+                })
+    
+    # Get base stats (existing logic)
     print_subheader(f"Enter BASE stats for {name}")
     print_info("These are the character's original stats before ANY bonuses")
     print_info("(e.g., what they rolled for stats, or their starting values)")
@@ -781,7 +880,7 @@ def create_reverse_engineered_character(item_repository) -> Character:
     print(f"Base stats: {', '.join(f'{stat}: {value}' for stat, value in base_stats.items())}")
     print(f"Total base stat points: {total_base}")
     
-    # Get current stats
+    # Get current stats (existing logic)
     print_subheader(f"Enter CURRENT stats for {name}")
     print_info("These are the character's final stats after ALL bonuses are applied")
     print_info("(class bonuses + profession bonuses + race bonuses + free points + items + blessings)")
@@ -824,7 +923,7 @@ def create_reverse_engineered_character(item_repository) -> Character:
     print(f"\nTotal current stat points: {total_current}")
     print(f"Total difference from base: +{total_difference}")
     
-    # Get remaining free points
+    # Get remaining free points (existing logic)
     print_subheader("Free Points")
     print_info("Enter any free points that are currently unallocated")
     print_info("(These are free points the character has but hasn't spent yet)")
@@ -843,20 +942,22 @@ def create_reverse_engineered_character(item_repository) -> Character:
         except ValueError:
             print_error("Please enter a valid integer.")
     
-    # Preview what will happen
+    # Preview what will happen (updated to include race history and auto-correction)
     print_subheader("Preview")
     print("The system will:")
     print("1. Calculate expected bonuses from class/profession/race progression")
-    print("2. Determine how free points were allocated based on stat differences")
-    print("3. Validate that the math works out correctly")
-    print("4. Create a character with full stat source tracking")
+    print("2. Use the provided race history for race bonus calculations")
+    print("3. Determine how free points were allocated based on stat differences") 
+    print("4. Auto-correct free points if character is missing expected free points")
+    print("5. Validate that the math works out correctly")
+    print("6. Create a character with full stat source tracking")
     
     if not confirm_action("Create reverse-engineered character with this data?"):
         print_info("Character creation cancelled.")
         pause_screen()
         return None
     
-    # Create character using factory method
+    # Create character using factory method (updated to include race_history)
     print_loading("Creating character and reverse-engineering stat allocation")
     
     try:
@@ -869,12 +970,13 @@ def create_reverse_engineered_character(item_repository) -> Character:
             tier_thresholds=tier_thresholds,
             class_history=class_history,
             profession_history=profession_history,
+            race_history=race_history,  # NEW: Include race history
             item_repository=item_repository
         )
         
         print_success(f"Reverse-engineered character {name} created successfully!")
         
-        # Show reverse engineering results
+        # Show reverse engineering results (updated to show race history)
         print_subheader("Reverse Engineering Results")
         
         # Use StatValidator to get the analysis
@@ -902,18 +1004,50 @@ def create_reverse_engineered_character(item_repository) -> Character:
                 print(f"  Free Points: +{expected_bonuses['profession_free_points']}")
         
         if expected_bonuses["race_free_points"] > 0 or any(expected_bonuses["race"].values()):
-            print("Race bonuses:")
+            print("Race bonuses (using race history):")
             for stat, bonus in expected_bonuses["race"].items():
                 if bonus > 0:
                     print(f"  {stat.capitalize()}: +{bonus}")
             if expected_bonuses["race_free_points"] > 0:
                 print(f"  Free Points: +{expected_bonuses['race_free_points']}")
         
-        # Display free points analysis
+        # Display race history used
+        if character.data_manager.race_history:
+            print_colored("\nRace History Applied:", 'cyan', True)
+            for entry in character.data_manager.race_history:
+                level_range = f"Race Level {entry['from_race_level']}"
+                if entry['to_race_level'] is not None:
+                    level_range += f"-{entry['to_race_level']}"
+                else:
+                    level_range += "+"
+                print(f"  {entry['race']}: {level_range}")
+        
+        # Display free points analysis (updated to show auto-correction)
         print_colored("\nFree Points Analysis:", 'cyan', True)
         print(f"Total free points from progression: {analysis['total_expected_free_points']}")
         print(f"Free points used in stat allocation: {analysis['total_free_points_used']}")
-        print(f"Remaining free points: {analysis['remaining_free_points']}")
+        
+        # Check if free points were auto-corrected
+        expected_remaining = analysis['remaining_free_points']
+        actual_remaining = character.level_system.free_points
+        
+        if actual_remaining != free_points:
+            print(f"Provided remaining free points: {free_points}")
+            print(f"Auto-corrected remaining free points: {actual_remaining}")
+            print_success(f"✓ Added {actual_remaining - free_points} missing free points")
+        else:
+            print(f"Remaining free points: {actual_remaining}")
+        
+        # Show the math
+        total_accounted = analysis['total_free_points_used'] + actual_remaining
+        if total_accounted == analysis['total_expected_free_points']:
+            print_success(f"✓ Free points balance correctly: {analysis['total_free_points_used']} + {actual_remaining} = {analysis['total_expected_free_points']}")
+        else:
+            discrepancy = analysis['total_expected_free_points'] - total_accounted
+            if discrepancy > 0:
+                print_warning(f"⚠ Still missing {discrepancy} free points after correction")
+            else:
+                print_warning(f"⚠ Character has {abs(discrepancy)} excess free points")
         
         # Display detailed stat allocation
         print_colored("\nDetailed Stat Allocation:", 'cyan', True)
@@ -944,7 +1078,7 @@ def create_reverse_engineered_character(item_repository) -> Character:
             if stat_analysis["discrepancy"] < 0:
                 print_error(f"  ⚠ ISSUE: {stat} requires {abs(stat_analysis['discrepancy'])} more points than available!")
         
-        # Validate the character
+        # Validate the character (updated to account for auto-correction)
         print_subheader("Validation Results")
         validation_result = character.validate_stats()
         
@@ -959,11 +1093,29 @@ def create_reverse_engineered_character(item_repository) -> Character:
                 for stat, issue in validation_result["stat_discrepancies"].items():
                     print_error(f"  {stat}: {issue}")
             
-            if not validation_result.get("free_points", {}).get("free_points_match", True):
-                fp_info = validation_result["free_points"]
-                print_error(f"  Free points mismatch: expected {fp_info['calculated_remaining']}, got {fp_info['actual_remaining']}")
+            # Check if free points are still mismatched after auto-correction
+            fp_info = validation_result.get("free_points", {})
+            if not fp_info.get("free_points_match", True):
+                expected = fp_info.get('calculated_remaining', 0)
+                actual = fp_info.get('actual_remaining', 0)
+                if expected != actual:
+                    print_error(f"  Free points still mismatched after auto-correction: expected {expected}, got {actual}")
+                    print_info("    This suggests an error in the progression rules or input data")
         
-        # Show final character summary
+        # Additional check for impossible stat allocations
+        impossible_allocations = []
+        for stat in STATS:
+            stat_analysis = analysis["stat_allocations"][stat]
+            if stat_analysis["discrepancy"] < 0:
+                impossible_allocations.append(f"{stat}: needs {abs(stat_analysis['discrepancy'])} more points")
+        
+        if impossible_allocations:
+            print_error("✗ Impossible stat allocations detected:")
+            for allocation in impossible_allocations:
+                print_error(f"  {allocation}")
+            print_info("These stats require more points than available from progression rules")
+        
+        # Show final character summary (existing logic)
         print_subheader("Character Summary")
         print(f"Name: {character.name}")
         
@@ -990,11 +1142,16 @@ def create_reverse_engineered_character(item_repository) -> Character:
         if character.level_system.free_points > 0:
             print(f"\nUnallocated Free Points: {character.level_system.free_points}")
         
-        # Final success message
+        # Final success message (updated to account for auto-correction)
         print()
         if validation_result["valid"]:
             print_success("🎉 Reverse-engineered character created and validated successfully!")
+            if character.level_system.free_points > free_points:
+                print_info(f"💡 Auto-corrected free points from {free_points} to {character.level_system.free_points}")
             print_info("This character can now be used normally in the system.")
+        elif impossible_allocations:
+            print_error("❌ Character creation failed due to impossible stat allocations.")
+            print_info("Please review your input data - the current stats require more points than the progression rules provide.")
         else:
             print_warning("⚠ Character created but has validation issues.")
             print_info("You may want to review the input data and try again.")
@@ -1099,7 +1256,7 @@ def view_character(character: Character):
     pause_screen()
 
 def view_character_history(character: Character):
-    """Display character's class and profession history."""
+    """Display character's class, profession, and race history."""
     clear_screen()
     print_header(f"Character History: {character.name}")
     
@@ -1144,6 +1301,191 @@ def view_character_history(character: Character):
             print(f"  {entry['profession']} ({level_range}) [Tier {tier}]")
     else:
         print_info("No profession history available.")
+    
+    # NEW: Display race history
+    if character.data_manager.race_history:
+        print_subheader("Race History")
+        for entry in character.data_manager.race_history:
+            level_range = f"Race Level {entry['from_race_level']}"
+            if entry['to_race_level'] is not None:
+                level_range += f"-{entry['to_race_level']}"
+            else:
+                level_range += "+"
+            print(f"  {entry['race']} ({level_range})")
+    else:
+        print_info("No race history available.")
+    
+    pause_screen()
+    
+def manage_race_history(character: Character):
+    """Manage character's race history."""
+    while True:
+        clear_screen()
+        print_header(f"Race History Management: {character.name}")
+        
+        # Display current race and level
+        current_race = character.data_manager.get_meta("Race", "")
+        current_race_level = int(character.data_manager.get_meta("Race level", "0"))
+        
+        print_subheader("Current Race Status")
+        print(f"Current Race: {current_race}")
+        print(f"Current Race Level: {current_race_level}")
+        
+        # Display race history
+        if character.data_manager.race_history:
+            print_subheader("Race History")
+            for i, entry in enumerate(character.data_manager.race_history, 1):
+                level_range = f"Race Level {entry['from_race_level']}"
+                if entry['to_race_level'] is not None:
+                    level_range += f"-{entry['to_race_level']}"
+                else:
+                    level_range += "+"
+                print(f"{i}. {entry['race']} ({level_range})")
+        else:
+            print_info("No race history available.")
+        
+        print_subheader("Race History Management")
+        print("1. Add race change")
+        print("2. View detailed race progression")
+        print("0. Back to main menu")
+        
+        choice = input("\nEnter your choice: ").strip()
+        
+        if choice == '0':
+            return
+        elif choice == '1':
+            add_race_change(character)
+        elif choice == '2':
+            view_race_progression(character)
+        else:
+            print_error("Invalid choice.")
+            pause_screen()
+            
+def add_race_change(character: Character):
+    """Add a race change to the character's history."""
+    clear_screen()
+    print_header("Add Race Change")
+    
+    current_race = character.data_manager.get_meta("Race", "")
+    current_race_level = int(character.data_manager.get_meta("Race level", "0"))
+    
+    print_subheader("Current Status")
+    print(f"Current Race: {current_race}")
+    print(f"Current Race Level: {current_race_level}")
+    
+    # Display available races
+    print_subheader("Available Races")
+    available_races = list(races.keys())
+    for i, race in enumerate(available_races, 1):
+        print(f"{i}. {race}")
+    
+    # Get new race
+    while True:
+        choice = input("\nEnter new race (number or name): ").strip()
+        
+        # Try to parse as number first
+        try:
+            race_num = int(choice)
+            if 1 <= race_num <= len(available_races):
+                new_race = available_races[race_num - 1]
+                break
+            else:
+                print_error(f"Please enter a number between 1 and {len(available_races)}")
+                continue
+        except ValueError:
+            # Try to match by name
+            new_race = choice.lower()
+            if new_race in available_races:
+                break
+            else:
+                print_error(f"Invalid race: {choice}")
+                continue
+    
+    if new_race == current_race.lower():
+        print_error("Character is already that race.")
+        pause_screen()
+        return
+    
+    # Get the race level at which the change occurs
+    while True:
+        try:
+            change_level = input(f"At what race level does the change occur? (current: {current_race_level}): ").strip()
+            if not change_level:
+                change_level = current_race_level + 1
+            else:
+                change_level = int(change_level)
+            
+            if change_level < 1:
+                print_error("Race level must be positive.")
+                continue
+            elif change_level <= current_race_level:
+                if not confirm_action(f"This will change race at level {change_level}, affecting past progression. Continue?"):
+                    continue
+            
+            break
+        except ValueError:
+            print_error("Please enter a valid integer.")
+    
+    # Confirm the change
+    print_subheader("Confirm Race Change")
+    print(f"Change from: {current_race}")
+    print(f"Change to: {new_race}")
+    print(f"At race level: {change_level}")
+    
+    if confirm_action("Apply this race change?"):
+        success = character.change_race_at_level(new_race, change_level)
+        
+        if success:
+            print_success(f"Race changed to {new_race} at race level {change_level}")
+            print_info("Race bonuses have been recalculated.")
+        else:
+            print_error("Failed to change race.")
+    else:
+        print_info("Race change cancelled.")
+    
+    pause_screen()
+    
+def view_race_progression(character: Character):
+    """View detailed race progression breakdown."""
+    clear_screen()
+    print_header("Detailed Race Progression")
+    
+    race_level = int(character.data_manager.get_meta("Race level", "0"))
+    
+    if race_level == 0:
+        print_error("Character has no race levels.")
+        pause_screen()
+        return
+    
+    print_subheader("Race Progression Breakdown")
+    
+    # Show progression for each race level
+    for level in range(1, race_level + 1):
+        race_at_level = character.data_manager.get_race_at_race_level(level)
+        
+        if race_at_level:
+            print(f"Race Level {level}: {race_at_level}")
+            
+            # Show what bonuses were gained at this level
+            race_data = races.get(race_at_level.lower(), {})
+            rank_ranges = race_data.get("rank_ranges", [])
+            
+            for range_data in sorted(rank_ranges, key=lambda x: x["min_level"]):
+                if range_data["min_level"] <= level <= range_data["max_level"]:
+                    bonuses = range_data.get("stats", {})
+                    if bonuses:
+                        bonus_strs = []
+                        for stat, value in bonuses.items():
+                            if value > 0:
+                                bonus_strs.append(f"{stat}: +{value}")
+                        if bonus_strs:
+                            print(f"  Bonuses: {', '.join(bonus_strs)}")
+                    
+                    if "rank" in range_data:
+                        print(f"  Rank: {range_data['rank']}")
+                    break
+        else:
+            print(f"Race Level {level}: No race data")
     
     pause_screen()
 
@@ -2965,11 +3307,11 @@ def preview_threshold_changes(character: Character):
     pause_screen()
 
 def print_main_menu(character: Optional[Character] = None):
-    """Print the main menu."""
+    """Print the main menu with race history option."""
     clear_screen()
     
     if character is None:
-        print_header("Welcome to the AoP Character Creator!")
+        print_header("Welcome to the Character Creator")
         print("1. Create a new character (calculated bonuses)")
         print("2. Create an advanced character (with tier history)")
         print("3. Create a custom character (manual stats, no progression)")
@@ -2993,7 +3335,8 @@ def print_main_menu(character: Optional[Character] = None):
         print("11. Add blessing")
         print("12. Validate character stats")
         print("13. Manage tier thresholds")
-        print("14. Start over (unload character)")
+        print("14. Manage race history")  # NEW
+        print("15. Start over (unload character)")
         print("0. Exit")
 
 # ============================================================================
@@ -3001,7 +3344,7 @@ def print_main_menu(character: Optional[Character] = None):
 # ============================================================================
 
 def main():
-    """Main application entry point."""
+    """Main application entry point with race history support."""
     # Initialize item repository
     try:
         item_repository = ItemRepository(items)
@@ -3018,6 +3361,7 @@ def main():
         choice = input("\nEnter your choice: ").strip()
         
         if character is None:
+            # Character creation menu (unchanged)
             if choice == '1':
                 character = create_character(item_repository)
             elif choice == '2':
@@ -3037,11 +3381,11 @@ def main():
                 print_error("Invalid choice.")
                 pause_screen()
         else:
-            # Character loaded menu
+            # Character loaded menu (ADD NEW OPTION)
             if choice == '1':
                 view_character(character)
             elif choice == '2':
-                view_character_history(character)
+                view_character_history(character)  # Now includes race history
             elif choice == '3':
                 update_stats(character)
             elif choice == '4':
@@ -3064,7 +3408,9 @@ def main():
                 validate_character_stats(character)
             elif choice == '13':
                 manage_tier_thresholds(character)
-            elif choice == '14':
+            elif choice == '14':  # NEW
+                manage_race_history(character)
+            elif choice == '15':  # Updated number
                 if confirm_action("Are you sure you want to unload the current character?"):
                     character = None
                     save_file = None
