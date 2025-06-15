@@ -1041,7 +1041,7 @@ class Character:
 
         tier2_profession_gains = {
             "crusher": {
-                "strength": 8,
+                "strength": 6,
                 "dexterity": 4,
                 "endurance": 4,
                 "free_points": 4,
