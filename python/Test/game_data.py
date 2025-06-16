@@ -60,6 +60,13 @@ class_gains = {
             "endurance": 2,
             "free_points": 4,
         },
+        "astral aetherologist": {
+            "intelligence": 5,
+            "willpower": 4,
+            "wisdom": 3,
+            "perception": 2,
+            "free_points": 4
+        },
         "glamourweaver": {
             "wisdom": 5,
             "intelligence": 4,
@@ -187,12 +194,47 @@ class_gains = {
             "strength": 2,
             "free_points": 4,
         },
-        "astral aetherologist": {
+        "blood warden": {
+            "vitality": 5,
+            "strength": 4,
+            "dexterity": 3,
+            "toughness": 2,
+            "free_points": 4,
+        },
+        "windservant": {
+            "intelligence": 5,
+            "dexterity": 4,
+            "willpower": 3,
+            "vitality": 2,
+            "free_points": 4,
+        },
+        "ice maiden": {
             "intelligence": 5,
             "willpower": 4,
             "wisdom": 3,
-            "perception": 2,
-            "free_points": 4
+            "dexterity": 2,
+            "free_points": 4,
+        },
+        "paramedic": {
+            "wisdom": 5,
+            "willpower": 4,
+            "dexterity": 3,
+            "vitality": 2,
+            "free_points": 4,
+        },
+        "treewalker": {
+            "perception": 5,
+            "dexterity": 4,
+            "endurance": 3,
+            "vitality": 2,
+            "free_points": 4,
+        },
+        "triage healer": {
+            "wisdom": 5,
+            "willpower": 4,
+            "perception": 3,
+            "endurance": 2,
+            "free_points": 4,
         },
     },
 }
@@ -221,6 +263,9 @@ profession_gains = {
             "free_points": 8
         },
         "magistrate": {
+            "free_points": 8
+        },
+        "advocate": {
             "free_points": 8
         },
         "gatherer": {
@@ -345,7 +390,7 @@ profession_gains = {
     },
     2: {  # Tier 2
         "crusher": {
-            "strength": 8,
+            "strength": 6,
             "dexterity": 4,
             "endurance": 4,
             "free_points": 4,
@@ -357,7 +402,7 @@ profession_gains = {
             "endurance": 2,
             "free_points": 4,
         },
-        "beginner trapper of the asrai": {
+        "trapper of the asrai": {
             "perception": 5,
             "dexterity": 4,
             "vitality": 3,
@@ -446,6 +491,34 @@ profession_gains = {
             "intelligence": 3,
             "vitality": 2,
             "free_points": 4
+        },
+        "shaper of the asrai": {
+            "dexterity": 5,
+            "perception": 4,
+            "willpower": 3,
+            "wisdom": 2,
+            "free_points": 2,
+        },
+        "blazing alchemist of flame's heart": {
+            "wisdom": 5,
+            "perception": 4,
+            "willpower": 3,
+            "intelligence": 2,
+            "free_points": 2,
+        },
+        "witch-wright of jewels": {
+            "wisdom": 5,
+            "dexterity": 4,
+            "vitality": 3,
+            "perception": 2,
+            "free_points": 2,
+        },
+        "proficient smith of the moonshadow": {
+            "strength": 5,
+            "perception": 4,
+            "vitality": 3,
+            "intelligence": 2,
+            "free_points": 2,
         },
     },
 }

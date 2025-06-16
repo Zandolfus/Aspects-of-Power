@@ -16,9 +16,13 @@ from tier_utils import (
 # Constants
 STATS = ["vitality", "endurance", "strength", "dexterity", "toughness", 
          "intelligence", "willpower", "wisdom", "perception"]
-META_INFO = ["Class", "Class level", "Race", "Profession", "Profession level"]
+META_INFO = ["Class", "Class level", "Race", "Profession", "Profession level", "Character Type"]  # NEW: Added Character Type
 DERIVED_META = ["Race level", "Race rank"]  # Meta attributes that are derived/calculated automatically
 TIER_HISTORY_META = ["tier_threshold", "class_history", "profession_history"]  # Tier change tracking
+
+# NEW: Character types
+CHARACTER_TYPES = ["character", "familiar", "monster"]
+RACE_LEVELING_TYPES = ["familiar", "monster"]  # Types that level through race instead of class/profession
 
 # Configuration (could be moved to a JSON config file)
 STAT_MODIFIER_FORMULA = {
@@ -42,14 +46,14 @@ class CharacterDataManager:
     """
     Central manager for character data with proper encapsulation and state management.
     Handles stats and meta information with appropriate validation and dependencies.
-    REFACTORED: Race level calculation moved to LevelSystem
+    UPDATED: Added support for character types and race-only leveling
     """
     def __init__(self, stats: Optional[Dict[str, int]] = None, 
                  meta: Optional[Dict[str, Any]] = None,
                  tier_thresholds: Optional[List[int]] = None,
                  class_history: Optional[List[Dict[str, Any]]] = None,
                  profession_history: Optional[List[Dict[str, Any]]] = None,
-                 race_history: Optional[List[Dict[str, Any]]] = None):  # NEW
+                 race_history: Optional[List[Dict[str, Any]]] = None):
         # Initialize stats
         self._base_stats = {stat: 5 for stat in STATS}
         if stats:
@@ -69,11 +73,15 @@ class CharacterDataManager:
                 if key in META_INFO:
                     self._meta[key] = value
         
+        # NEW: Set default character type if not specified
+        if not self._meta.get("Character Type"):
+            self._meta["Character Type"] = "character"
+        
         # Initialize tier change tracking with character-specific thresholds
         self.tier_thresholds = tier_thresholds or DEFAULT_TIER_THRESHOLDS.copy()
         self.class_history = class_history or []
         self.profession_history = profession_history or []
-        self.race_history = race_history or []  # NEW
+        self.race_history = race_history or []
         
         # Initialize class history if character has a class but no history
         if self._meta.get("Class") and not self.class_history:
@@ -91,7 +99,7 @@ class CharacterDataManager:
                 "to_level": None
             }]
         
-        # NEW: Initialize race history if character has a race but no history
+        # Initialize race history if character has a race but no history
         if self._meta.get("Race") and not self.race_history:
             self.race_history = [{
                 "race": self._meta["Race"],
@@ -198,6 +206,10 @@ class CharacterDataManager:
         # Prevent direct modification of derived attributes unless forced
         if key in DERIVED_META and not force:
             raise ValueError(f"Cannot directly set derived attribute: {key}")
+        
+        # NEW: Validate character type
+        if key == "Character Type" and value not in CHARACTER_TYPES:
+            raise ValueError(f"Invalid character type: {value}. Must be one of: {CHARACTER_TYPES}")
         
         # Store old value for comparison
         old_value = self._meta.get(key, "")
@@ -328,6 +340,19 @@ class CharacterDataManager:
         
         # Update current race in meta
         self._meta["Race"] = new_race
+    
+    # NEW: Character type helper methods
+    def is_familiar(self) -> bool:
+        """Check if this character is a familiar"""
+        return self.get_meta("Character Type") == "familiar"
+    
+    def is_monster(self) -> bool:
+        """Check if this character is a monster"""
+        return self.get_meta("Character Type") == "monster"
+    
+    def is_race_leveling_type(self) -> bool:
+        """Check if this character type levels through race instead of class/profession"""
+        return self.get_meta("Character Type") in RACE_LEVELING_TYPES
     
     def get_tier_for_level(self, level: int) -> int:
         """Get the tier number for a given level using this character's thresholds"""
@@ -684,7 +709,7 @@ class CombatSystem:
 class LevelSystem:
     """
     Manages character leveling and progression
-    REFACTORED: Now handles race level calculations and stat applications
+    UPDATED: Added support for race-only leveling for familiars and monsters
     """
     
     def __init__(self, data_manager: CharacterDataManager):
@@ -693,8 +718,18 @@ class LevelSystem:
     
     def level_up(self, level_type: str, target_level: int) -> bool:
         """Level up character in specified category"""
+        # NEW: Handle race level up for familiars/monsters
+        if level_type.lower() == "race":
+            return self.race_level_up(target_level)
+        
         if level_type.lower() not in ["class", "profession"]:
-            raise ValueError("Invalid level type. Must be 'Class' or 'Profession'.")
+            raise ValueError("Invalid level type. Must be 'Class', 'Profession', or 'Race'.")
+            
+        # NEW: Prevent class/profession leveling for familiars and monsters
+        if self.data_manager.is_race_leveling_type():
+            print(f"Error: {self.data_manager.get_meta('Character Type').capitalize()}s cannot level up in {level_type}.")
+            print("Use race level up instead.")
+            return False
             
         try:
             current_level = int(self.data_manager.get_meta(f"{level_type} level", "0"))
@@ -719,8 +754,36 @@ class LevelSystem:
             elif level_type.lower() == "profession":
                 self._apply_profession_level_up(level)
         
-        # Update race level after class/profession level changes
-        self._update_race_level()
+        # Update race level after class/profession level changes (only for regular characters)
+        if not self.data_manager.is_race_leveling_type():
+            self._update_race_level()
+        
+        return True
+    
+    def race_level_up(self, target_level: int) -> bool:
+        """
+        NEW: Level up race level directly for familiars and monsters
+        """
+        try:
+            current_race_level = int(self.data_manager.get_meta("Race level", "0"))
+        except ValueError:
+            print("Warning: Invalid race level value.")
+            return False
+            
+        if target_level <= current_race_level:
+            print(f"Race is already at or above level {target_level}.")
+            return False
+            
+        print(f"Leveling up race from {current_race_level} to {target_level}")
+        
+        # Update race level
+        self.data_manager.set_meta("Race level", str(target_level), force=True)
+        
+        # Apply race level-up effects for each level gained
+        self._apply_race_level_up(current_race_level, target_level)
+        
+        # Update race rank
+        self._update_race_rank(target_level)
         
         return True
     
@@ -777,7 +840,14 @@ class LevelSystem:
                 self.data_manager.add_stat(stat, gain, StatSource.PROFESSION)
     
     def _update_race_level(self, skip_free_points: bool = False, apply_bonuses: bool = True) -> None:
-        """Update race level based on class and profession level"""
+        """
+        Update race level based on class and profession level
+        UPDATED: Only for regular characters, not familiars/monsters
+        """
+        # NEW: Skip auto-calculation for race-leveling types (familiars/monsters)
+        if self.data_manager.is_race_leveling_type():
+            return
+        
         try:
             class_level = int(self.data_manager.get_meta("Class level", "0"))
             profession_level = int(self.data_manager.get_meta("Profession level", "0"))
@@ -888,6 +958,11 @@ class LevelSystem:
         Validates against available tiers dynamically.
         Returns True if successful, False otherwise.
         """
+        # NEW: Prevent class changes for familiars and monsters
+        if self.data_manager.is_race_leveling_type():
+            print(f"Error: {self.data_manager.get_meta('Character Type').capitalize()}s cannot have classes.")
+            return False
+        
         # Determine what tier this level corresponds to
         tier = self.data_manager.get_tier_for_level(at_level)
         
@@ -911,6 +986,11 @@ class LevelSystem:
         Validates against available tiers dynamically.
         Returns True if successful, False otherwise.
         """
+        # NEW: Prevent profession changes for familiars and monsters
+        if self.data_manager.is_race_leveling_type():
+            print(f"Error: {self.data_manager.get_meta('Character Type').capitalize()}s cannot have professions.")
+            return False
+        
         # Determine what tier this level corresponds to
         tier = self.data_manager.get_tier_for_level(at_level)
         
@@ -979,7 +1059,7 @@ class LevelSystem:
         This method:
         1. Resets all race stat bonuses to zero
         2. Resets race level and rank  
-        3. Recalculates race level based on current class/profession levels
+        3. Recalculates race level based on current class/profession levels (or keeps manual for familiars/monsters)
         4. Reapplies appropriate race stat bonuses
         5. Optionally adds race free points (skipped when loading)
         """
@@ -987,12 +1067,18 @@ class LevelSystem:
         for stat in STATS:
             self.data_manager.reset_stat_source(stat, StatSource.RACE)
         
-        # Reset race level and rank
-        self.data_manager.set_meta("Race level", "0", force=True)
-        self.data_manager.set_meta("Race rank", "", force=True)
-        
-        # Recalculate race level (pass skip_free_points flag)
-        self._update_race_level(skip_free_points=skip_free_points)
+        # For regular characters, reset and recalculate race level
+        if not self.data_manager.is_race_leveling_type():
+            self.data_manager.set_meta("Race level", "0", force=True)
+            self.data_manager.set_meta("Race rank", "", force=True)
+            # Recalculate race level (pass skip_free_points flag)
+            self._update_race_level(skip_free_points=skip_free_points)
+        else:
+            # For familiars/monsters, keep current race level but reapply bonuses
+            current_race_level = int(self.data_manager.get_meta("Race level", "0"))
+            if current_race_level > 0:
+                self._apply_race_level_up(0, current_race_level, skip_free_points)
+                self._update_race_rank(current_race_level)
     
     def allocate_free_points(self, stat: str, amount: int) -> bool:
         """Allocate free points to a specific stat"""
@@ -1154,6 +1240,10 @@ class CharacterSerializer:
                             if key in row:
                                 meta[key] = row[key]
                         
+                        # Ensure Character Type is set
+                        if "Character Type" not in meta or not meta["Character Type"]:
+                            meta["Character Type"] = "character"  # Default for legacy characters
+                        
                         # Extract tier history
                         tier_thresholds = [25]  # Default
                         if "tier_thresholds" in row and row["tier_thresholds"]:
@@ -1304,6 +1394,7 @@ class CharacterSerializer:
                         character.creation_history = creation_history
                         
                         print(f"Character '{character_name}' loaded from {filename}")
+                        print(f"Character Type: {meta.get('Character Type', 'character')}")
                         print(f"Validation status: {validation_status}")
                         if creation_history:
                             print(f"Originally created as: {creation_history.get('original_creation_method', 'unknown')}")
@@ -1320,7 +1411,8 @@ class StatValidator:
     """
     Comprehensive validation and stat analysis system.
     Handles validation for calculated characters, custom manual characters, 
-    and reverse-engineered manual characters.
+    reverse-engineered manual characters, and familiars/monsters.
+    UPDATED: Added support for familiar/monster validation
     """
     
     def __init__(self, character):
@@ -1338,7 +1430,10 @@ class StatValidator:
         Performs validation and updates character's validation status.
         Includes auto-correction for missing free points.
         """
-        if self.character.is_manual_character:
+        # NEW: Handle validation for familiars/monsters
+        if self.character.data_manager.is_race_leveling_type():
+            result = self._validate_race_leveling_character()
+        elif self.character.is_manual_character:
             result = self._validate_manual_character()
         else:
             result = self._validate_calculated_character()
@@ -1352,7 +1447,9 @@ class StatValidator:
             result["auto_correction_message"] = correction_message
             
             # Re-validate after correction to update validation status
-            if self.character.is_manual_character:
+            if self.character.data_manager.is_race_leveling_type():
+                updated_result = self._validate_race_leveling_character()
+            elif self.character.is_manual_character:
                 updated_result = self._validate_manual_character()
             else:
                 updated_result = self._validate_calculated_character()
@@ -1386,7 +1483,10 @@ class StatValidator:
             return False, 0, "Custom manual character - no auto-correction applied"
         
         # Calculate expected free points
-        if self.character.is_manual_character:
+        if self.character.data_manager.is_race_leveling_type():
+            # Familiar/monster - only race bonuses
+            expected_remaining = self._calculate_expected_race_free_points()
+        elif self.character.is_manual_character:
             # Reverse-engineered manual character
             base_stats = self.character.manual_base_stats
             current_stats = self.character.manual_current_stats
@@ -1414,6 +1514,183 @@ class StatValidator:
         else:
             # Character has correct or excess free points
             return False, 0, "No free point correction needed"
+    
+    def _calculate_expected_race_free_points(self) -> int:
+        """Calculate expected free points from race bonuses only (for familiars/monsters)"""
+        race_level = int(self.character.data_manager.get_meta("Race level", "0"))
+        if race_level <= 0:
+            return 0
+        
+        total_free_points = 0
+        
+        if self.character.data_manager.race_history:
+            # Use race history
+            for level in range(1, race_level + 1):
+                race_at_level = self.character.data_manager.get_race_at_race_level(level)
+                if race_at_level and race_at_level.lower() in races:
+                    race_data = races[race_at_level.lower()]
+                    rank_ranges = race_data.get("rank_ranges", [])
+                    
+                    for range_data in sorted(rank_ranges, key=lambda x: x["min_level"]):
+                        if range_data["min_level"] <= level <= range_data["max_level"]:
+                            total_free_points += range_data.get("stats", {}).get("free_points", 0)
+                            break
+        else:
+            # Fallback to current race for all levels
+            race_name = self.character.data_manager.get_meta("Race", "").lower()
+            if race_name and race_name in races:
+                race_data = races[race_name]
+                rank_ranges = race_data.get("rank_ranges", [])
+                
+                for level in range(1, race_level + 1):
+                    for range_data in sorted(rank_ranges, key=lambda x: x["min_level"]):
+                        if range_data["min_level"] <= level <= range_data["max_level"]:
+                            total_free_points += range_data.get("stats", {}).get("free_points", 0)
+                            break
+        
+        # Calculate how many free points should remain
+        current_stats = self.character.data_manager.get_all_stats()
+        stat_sources = {stat: self.character.data_manager.get_stat_sources(stat) for stat in STATS}
+        
+        free_points_spent = 0
+        for stat in STATS:
+            sources = stat_sources[stat]
+            if StatSource.FREE_POINTS in sources:
+                free_points_spent += sources[StatSource.FREE_POINTS]
+        
+        return max(0, total_free_points - free_points_spent)
+    
+    def _validate_race_leveling_character(self) -> Dict[str, Any]:
+        """
+        NEW: Validate a familiar or monster that levels through race only.
+        
+        Returns:
+            Validation results for race-leveling character
+        """
+        result = {
+            "valid": True,
+            "stat_discrepancies": {},
+            "free_points": {},
+            "overall_summary": "",
+            "details": {},
+            "validation_type": "race_leveling"
+        }
+        
+        character_type = self.character.data_manager.get_meta("Character Type")
+        
+        # 1. Validate that they don't have class/profession levels
+        class_level = int(self.character.data_manager.get_meta("Class level", "0"))
+        profession_level = int(self.character.data_manager.get_meta("Profession level", "0"))
+        
+        if class_level > 0:
+            result["valid"] = False
+            result["stat_discrepancies"]["class_level"] = f"{character_type.capitalize()}s should not have class levels"
+        
+        if profession_level > 0:
+            result["valid"] = False
+            result["stat_discrepancies"]["profession_level"] = f"{character_type.capitalize()}s should not have profession levels"
+        
+        # 2. Validate race level and race bonuses
+        race_level = int(self.character.data_manager.get_meta("Race level", "0"))
+        if race_level <= 0:
+            result["stat_discrepancies"]["race_level"] = f"{character_type.capitalize()} must have a race level"
+            result["valid"] = False
+        
+        # 3. Calculate expected stats from race bonuses
+        expected_race_stats = self._get_race_stats()
+        base_stats = self._get_base_stats()
+        item_stats = self._get_item_stats()
+        blessing_stats = self._get_blessing_stats()
+        
+        # Calculate expected free points
+        expected_free_points = expected_race_stats.get("free_points", 0)
+        result["free_points"]["expected_total"] = expected_free_points
+        
+        # Calculate expected base stats (without free point allocation)
+        expected_base_stats = {}
+        for stat in STATS:
+            expected_base_stats[stat] = (
+                base_stats.get(stat, 5) +
+                expected_race_stats.get(stat, 0) +
+                item_stats.get(stat, 0) +
+                blessing_stats.get(stat, 0)
+            )
+        
+        # Get actual stats and their sources
+        actual_stats = self.character.data_manager.get_all_stats()
+        stat_sources = {stat: self.character.data_manager.get_stat_sources(stat) for stat in STATS}
+        
+        # Calculate free points spent
+        free_points_spent = 0
+        for stat in STATS:
+            sources = stat_sources[stat]
+            if StatSource.FREE_POINTS in sources:
+                free_points_spent += sources[StatSource.FREE_POINTS]
+        
+        result["free_points"]["spent"] = free_points_spent
+        
+        # Check discrepancies for each stat
+        for stat in STATS:
+            # Expected value from all sources except free points
+            expected_base = expected_base_stats[stat]
+            
+            # Actual value
+            actual = actual_stats[stat]
+            
+            # Free points used for this stat
+            free_points_used = stat_sources[stat].get(StatSource.FREE_POINTS, 0)
+            
+            # Expected total including free points
+            expected_total = expected_base + free_points_used
+            
+            # Check if there's a discrepancy
+            if actual != expected_total:
+                diff = actual - expected_total
+                result["valid"] = False
+                result["stat_discrepancies"][stat] = {
+                    "expected_base": expected_base,
+                    "free_points_used": free_points_used,
+                    "expected_total": expected_total,
+                    "actual": actual,
+                    "difference": diff,
+                    "status": "over_allocated" if diff > 0 else "under_allocated"
+                }
+        
+        # Check overall free points balance
+        total_free_points_received = expected_free_points
+        total_free_points_accounted = free_points_spent + self.character.level_system.free_points
+        free_points_diff = total_free_points_received - total_free_points_accounted
+        
+        result["free_points"]["difference"] = free_points_diff
+        
+        if free_points_diff != 0:
+            result["valid"] = False
+        
+        # Store detailed information for reference
+        result["details"] = {
+            "base_stats": base_stats,
+            "race_stats": expected_race_stats,
+            "item_stats": item_stats,
+            "blessing_stats": blessing_stats,
+            "expected_base_stats": expected_base_stats,
+            "actual_stats": actual_stats,
+            "stat_sources": stat_sources
+        }
+        
+        # Create human-readable summary
+        if result["valid"]:
+            result["overall_summary"] = f"{character_type.capitalize()} follows race progression rules correctly"
+        else:
+            errors = []
+            if any("level" in key for key in result["stat_discrepancies"]):
+                errors.append("inappropriate class/profession levels")
+            if any("level" not in key for key in result["stat_discrepancies"]):
+                errors.append(f"{len([k for k in result['stat_discrepancies'] if 'level' not in k])} stat issues")
+            if free_points_diff != 0:
+                errors.append("free points mismatch")
+            result["overall_summary"] = f"{character_type.capitalize()} has problems: {', '.join(errors)}"
+        
+        return result
     
     def _validate_manual_character(self) -> Dict[str, Any]:
         """
@@ -1450,15 +1727,16 @@ class StatValidator:
         warnings = []
         errors = []
         
-        # 1. Check race level calculation (only thing that should be calculated)
-        class_level = int(self.character.data_manager.get_meta("Class level", "0"))
-        profession_level = int(self.character.data_manager.get_meta("Profession level", "0"))
-        expected_race_level = (class_level + profession_level) // 2
-        actual_race_level = int(self.character.data_manager.get_meta("Race level", "0"))
-        
-        if expected_race_level != actual_race_level:
-            errors.append(f"Race level calculation error: expected {expected_race_level}, actual {actual_race_level}")
-            result["valid"] = False
+        # 1. Check race level calculation (only thing that should be calculated for regular characters)
+        if not self.character.data_manager.is_race_leveling_type():
+            class_level = int(self.character.data_manager.get_meta("Class level", "0"))
+            profession_level = int(self.character.data_manager.get_meta("Profession level", "0"))
+            expected_race_level = (class_level + profession_level) // 2
+            actual_race_level = int(self.character.data_manager.get_meta("Race level", "0"))
+            
+            if expected_race_level != actual_race_level:
+                errors.append(f"Race level calculation error: expected {expected_race_level}, actual {actual_race_level}")
+                result["valid"] = False
         
         # 2. Basic stat sanity checks
         for stat in STATS:
@@ -1476,7 +1754,7 @@ class StatValidator:
         
         # Store detailed validation results
         result["custom_validation"] = {
-            "race_level_correct": expected_race_level == actual_race_level,
+            "race_level_correct": True,  # Skip for race-leveling types
             "stats_reasonable": all(0 <= self.character.data_manager.get_stat(stat) <= 10000 for stat in STATS),
             "free_points_valid": self.character.level_system.free_points >= 0,
             "warnings": warnings,
@@ -1693,7 +1971,7 @@ class StatValidator:
     def calculate_expected_bonuses(self) -> Dict[str, Any]:
         """
         Calculate expected stat bonuses from class/profession/race progression.
-        UPDATED: Now uses race history for race bonus calculations.
+        UPDATED: Now uses race history for race bonus calculations and handles familiars/monsters.
         """
         bonuses = {
             "class": {stat: 0 for stat in STATS},
@@ -1703,6 +1981,44 @@ class StatValidator:
             "profession_free_points": 0,
             "race_free_points": 0
         }
+        
+        # For familiars/monsters, only calculate race bonuses
+        if self.character.data_manager.is_race_leveling_type():
+            race_level = int(self.character.data_manager.get_meta("Race level", "0"))
+            if race_level > 0:
+                if self.character.data_manager.race_history:
+                    # Use race history
+                    for level in range(1, race_level + 1):
+                        race_at_level = self.character.data_manager.get_race_at_race_level(level)
+                        if race_at_level and race_at_level.lower() in races:
+                            race_data = races[race_at_level.lower()]
+                            rank_ranges = race_data.get("rank_ranges", [])
+                            
+                            for range_data in sorted(rank_ranges, key=lambda x: x["min_level"]):
+                                if range_data["min_level"] <= level <= range_data["max_level"]:
+                                    for stat, gain in range_data.get("stats", {}).items():
+                                        if stat == "free_points":
+                                            bonuses["race_free_points"] += gain
+                                        elif stat in STATS:
+                                            bonuses["race"][stat] += gain
+                                    break
+                else:
+                    # Fallback to current race for all levels
+                    race_name = self.character.data_manager.get_meta("Race", "").lower()
+                    if race_name and race_name in races:
+                        race_data = races[race_name]
+                        rank_ranges = race_data.get("rank_ranges", [])
+                        
+                        for level in range(1, race_level + 1):
+                            for range_data in sorted(rank_ranges, key=lambda x: x["min_level"]):
+                                if range_data["min_level"] <= level <= range_data["max_level"]:
+                                    for stat, gain in range_data.get("stats", {}).items():
+                                        if stat == "free_points":
+                                            bonuses["race_free_points"] += gain
+                                        elif stat in STATS:
+                                            bonuses["race"][stat] += gain
+                                    break
+            return bonuses
         
         # Calculate class bonuses (unchanged)
         class_level = int(self.character.data_manager.get_meta("Class level", "0"))
@@ -1831,7 +2147,7 @@ class StatValidator:
                 total_free_points_used += free_points_allocated
         
         allocation_analysis["total_free_points_used"] = total_free_points_used
-        allocation_analysis["remaining_free_points"] = max(0, total_expected_free_points - total_free_points_used)
+        allocation_analysis["remaining_free_points"] = total_expected_free_points - total_free_points_used
         
         return allocation_analysis
     
@@ -2002,13 +2318,14 @@ class Character:
     """
     Main character class with factory methods for different creation types.
     Use factory methods instead of calling constructor directly.
+    UPDATED: Added support for familiars and monsters
     """
     
     def __init__(self, name: str, stats: Dict[str, int], meta: Dict[str, str], 
                  free_points: int = 0, tier_thresholds: Optional[List[int]] = None,
                  class_history: Optional[List[Dict[str, Any]]] = None,
                  profession_history: Optional[List[Dict[str, Any]]] = None,
-                 race_history: Optional[List[Dict[str, Any]]] = None,  # NEW
+                 race_history: Optional[List[Dict[str, Any]]] = None,
                  item_repository=None, blessing: Optional[Dict[str, int]] = None):
         """
         Private constructor - use factory methods instead.
@@ -2051,7 +2368,7 @@ class Character:
                          tier_thresholds: Optional[List[int]] = None,
                          class_history: Optional[List[Dict[str, Any]]] = None,
                          profession_history: Optional[List[Dict[str, Any]]] = None,
-                         race_history: Optional[List[Dict[str, Any]]] = None,  # NEW
+                         race_history: Optional[List[Dict[str, Any]]] = None,
                          item_repository=None, blessing: Optional[Dict[str, int]] = None):
         """
         Create a character with calculated progression bonuses.
@@ -2082,7 +2399,8 @@ class Character:
                      item_repository=None, blessing: Optional[Dict[str, int]] = None):
         """
         Create a custom manual character with no progression calculations.
-        Stats are used as-is, only race level is calculated.
+        Stats are used as-is, only race level is calculated for regular characters.
+        UPDATED: Added support for familiars/monsters
         """
         character = cls(
             name=name,
@@ -2096,9 +2414,13 @@ class Character:
             blessing=blessing
         )
         
-        # Mark as manual character and only calculate race level
+        # Mark as manual character
         character.is_manual_character = True
-        character.level_system._update_race_level(apply_bonuses=True)
+        
+        # For regular characters, calculate race level
+        # For familiars/monsters, race level is set manually
+        if not character.data_manager.is_race_leveling_type():
+            character.level_system._update_race_level(apply_bonuses=True)
         
         return character
     
@@ -2108,11 +2430,12 @@ class Character:
                                  free_points: int = 0, tier_thresholds: Optional[List[int]] = None,
                                  class_history: Optional[List[Dict[str, Any]]] = None,
                                  profession_history: Optional[List[Dict[str, Any]]] = None,
-                                 race_history: Optional[List[Dict[str, Any]]] = None,  # NEW
+                                 race_history: Optional[List[Dict[str, Any]]] = None,
                                  item_repository=None, blessing: Optional[Dict[str, int]] = None):
         """
         Create a manual character that follows progression rules via reverse engineering.
         Base stats and current stats are used to calculate stat allocation.
+        UPDATED: Added race_history parameter
         """
         character = cls(
             name=name,
@@ -2138,6 +2461,96 @@ class Character:
         return character
     
     @classmethod
+    def create_familiar(cls, name: str, race: str, race_level: int, stats: Dict[str, int],
+                       tier_thresholds: Optional[List[int]] = None,
+                       race_history: Optional[List[Dict[str, Any]]] = None,
+                       item_repository=None, blessing: Optional[Dict[str, int]] = None):
+        """
+        NEW: Create a familiar that levels through race levels only.
+        
+        Args:
+            name: Familiar's name
+            race: Familiar's race
+            race_level: Current race level
+            stats: Base stats
+            tier_thresholds: Custom tier thresholds (optional)
+            race_history: Race change history (optional)
+            item_repository: Item repository (optional)
+            blessing: Blessing stats (optional)
+        """
+        meta = {
+            "Character Type": "familiar",
+            "Race": race,
+            "Race level": str(race_level),
+            "Class": "",
+            "Class level": "0",
+            "Profession": "",
+            "Profession level": "0",
+            "Race rank": ""
+        }
+        
+        character = cls(
+            name=name,
+            stats=stats,
+            meta=meta,
+            tier_thresholds=tier_thresholds,
+            race_history=race_history,
+            item_repository=item_repository,
+            blessing=blessing
+        )
+        
+        # Apply race level bonuses
+        character.data_manager.set_meta("Race level", str(race_level), force=True)
+        character._calculate_and_apply_level_stats()
+        
+        return character
+    
+    @classmethod
+    def create_monster(cls, name: str, race: str, race_level: int, stats: Dict[str, int],
+                      tier_thresholds: Optional[List[int]] = None,
+                      race_history: Optional[List[Dict[str, Any]]] = None,
+                      item_repository=None, blessing: Optional[Dict[str, int]] = None):
+        """
+        NEW: Create a monster that levels through race levels only.
+        
+        Args:
+            name: Monster's name
+            race: Monster's race
+            race_level: Current race level
+            stats: Base stats
+            tier_thresholds: Custom tier thresholds (optional)
+            race_history: Race change history (optional)
+            item_repository: Item repository (optional)
+            blessing: Blessing stats (optional)
+        """
+        meta = {
+            "Character Type": "monster",
+            "Race": race,
+            "Race level": str(race_level),
+            "Class": "",
+            "Class level": "0",
+            "Profession": "",
+            "Profession level": "0",
+            "Race rank": ""
+        }
+        
+        character = cls(
+            name=name,
+            stats=stats,
+            meta=meta,
+            tier_thresholds=tier_thresholds,
+            race_history=race_history,
+            item_repository=item_repository,
+            blessing=blessing
+        )
+        
+        # Apply race level bonuses
+        character.data_manager.set_meta("Race level", str(race_level), force=True)
+        character._calculate_and_apply_level_stats()
+        
+        return character
+    
+    @classmethod
     def load_from_file(cls, filename: str, character_name: str, item_repository=None):
         """Load character from CSV file."""
         return CharacterSerializer.load_from_csv(filename, character_name, item_repository)
@@ -2146,8 +2559,9 @@ class Character:
                                  current_stats: Dict[str, int], provided_free_points: int):
         """Set up character using reverse engineering analysis."""
         
-        # 1. Calculate race level only (no bonuses)
-        self.level_system._update_race_level(apply_bonuses=False)
+        # 1. Calculate race level only (no bonuses) for regular characters
+        if not self.data_manager.is_race_leveling_type():
+            self.level_system._update_race_level(apply_bonuses=False)
         
         # 2. Use StatValidator to perform reverse engineering
         validator = StatValidator(self)
@@ -2186,21 +2600,32 @@ class Character:
         self.health_manager.update_max_health()
     
     def _calculate_and_apply_level_stats(self):
-        """Calculate and apply stat gains based on current class/profession levels."""
-        # Apply class level gains
-        class_level = int(self.data_manager.get_meta("Class level", "0"))
-        if class_level > 0:
-            for level in range(1, class_level + 1):
-                self.level_system._apply_class_level_up(level)
-        
-        # Apply profession level gains
-        profession_level = int(self.data_manager.get_meta("Profession level", "0"))
-        if profession_level > 0:
-            for level in range(1, profession_level + 1):
-                self.level_system._apply_profession_level_up(level)
-        
-        # Update race level after class/profession calculations
-        self.level_system._update_race_level()
+        """
+        Calculate and apply stat gains based on current class/profession/race levels.
+        UPDATED: Handle familiars/monsters that only use race levels
+        """
+        if self.data_manager.is_race_leveling_type():
+            # For familiars/monsters, only apply race level gains
+            race_level = int(self.data_manager.get_meta("Race level", "0"))
+            if race_level > 0:
+                self.level_system._apply_race_level_up(0, race_level)
+                self.level_system._update_race_rank(race_level)
+        else:
+            # For regular characters, apply class/profession/race gains
+            # Apply class level gains
+            class_level = int(self.data_manager.get_meta("Class level", "0"))
+            if class_level > 0:
+                for level in range(1, class_level + 1):
+                    self.level_system._apply_class_level_up(level)
+            
+            # Apply profession level gains
+            profession_level = int(self.data_manager.get_meta("Profession level", "0"))
+            if profession_level > 0:
+                for level in range(1, profession_level + 1):
+                    self.level_system._apply_profession_level_up(level)
+            
+            # Update race level after class/profession calculations
+            self.level_system._update_race_level()
         
         # Update health
         self.health_manager.update_max_health()
@@ -2224,6 +2649,19 @@ class Character:
         """Update finesse setting based on class."""
         class_name = self.data_manager.get_meta("Class", "").lower()
         self.combat_system.set_finesse(class_name in ["light warrior", "thunder puppet's shadow"])
+    
+    # NEW: Helper methods for character types
+    def is_familiar(self) -> bool:
+        """Check if this character is a familiar"""
+        return self.data_manager.is_familiar()
+    
+    def is_monster(self) -> bool:
+        """Check if this character is a monster"""
+        return self.data_manager.is_monster()
+    
+    def is_race_leveling_type(self) -> bool:
+        """Check if this character type levels through race instead of class/profession"""
+        return self.data_manager.is_race_leveling_type()
     
     # All the existing methods remain the same
     def update_meta(self, key: str, value: Any) -> bool:
@@ -2257,7 +2695,9 @@ class Character:
                     self.level_system.change_race(value)
                 
                 elif key in ["Class level", "Profession level"]:
-                    self.level_system._update_race_level()
+                    # Only update race level for regular characters
+                    if not self.data_manager.is_race_leveling_type():
+                        self.level_system._update_race_level()
             
             self.health_manager.update_max_health()
             return True
@@ -2379,10 +2819,11 @@ class Character:
         validator = StatValidator(self)
         result = validator.validate()
         
-        # Auto-convert manual characters that pass validation
+        # Auto-convert manual characters that pass validation (but not familiars/monsters)
         if (self.is_manual_character and 
             self.manual_base_stats and 
             self.manual_current_stats and
+            not self.is_race_leveling_type() and  # Don't auto-convert familiars/monsters
             result["valid"]):
             
             conversion_success = self._convert_to_calculated()
@@ -2427,20 +2868,22 @@ class Character:
     
     def get_creation_info(self) -> Dict[str, Any]:
         """Get information about how this character was created."""
+        character_type = self.data_manager.get_meta("Character Type", "character")
+        
         if self.creation_history:
             return {
-                "current_type": "calculated (converted)",
+                "current_type": f"calculated {character_type} (converted)",
                 "original_type": self.creation_history["original_creation_method"],
                 "converted_at": self.creation_history["converted_at"],
                 "conversion_reason": self.creation_history["conversion_reason"]
             }
         elif self.is_manual_character:
             if self.manual_base_stats and self.manual_current_stats:
-                return {"current_type": "manual (reverse-engineered)", "validated": self.validation_status}
+                return {"current_type": f"manual {character_type} (reverse-engineered)", "validated": self.validation_status}
             else:
-                return {"current_type": "manual (custom)", "validated": self.validation_status}
+                return {"current_type": f"manual {character_type} (custom)", "validated": self.validation_status}
         else:
-            return {"current_type": "calculated", "validated": self.validation_status}
+            return {"current_type": f"calculated {character_type}", "validated": self.validation_status}
     
     def __str__(self) -> str:
         """String representation of character."""

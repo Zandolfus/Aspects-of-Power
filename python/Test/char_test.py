@@ -1,6 +1,7 @@
 """
 Friendly Character Creator CLI
 A user-friendly command-line interface for the Character Creator system.
+UPDATED: Added support for familiars and monsters that level through race
 """
 import os
 import sys
@@ -9,7 +10,7 @@ import random
 import csv
 from typing import Optional, Dict, Any, Tuple
 from Character_Creator import (
-    Character, ItemRepository, STATS, META_INFO, StatValidator
+    Character, ItemRepository, STATS, META_INFO, StatValidator, RACE_LEVELING_TYPES
 )
 from tier_utils import (
     get_available_classes_for_tier, get_available_professions_for_tier,
@@ -126,11 +127,83 @@ def print_inventory_menu(character: Character):
     print("0. Back to main menu")
 
 # ============================================================================
+# Character Type Selection
+# ============================================================================
+
+def select_character_type() -> str:
+    """
+    NEW: Allow user to select character type
+    """
+    clear_screen()
+    print_header("Select Character Type")
+    
+    print_info("Choose the type of character to create:")
+    print("1. Character - Regular character with class and profession levels")
+    print("2. Familiar - Levels through race only, no class/profession")
+    print("3. Monster - Levels through race only, no class/profession")
+    print("0. Cancel")
+    
+    while True:
+        choice = input("\nEnter your choice: ").strip()
+        
+        if choice == '0':
+            return None
+        elif choice == '1':
+            return "character"
+        elif choice == '2':
+            return "familiar"
+        elif choice == '3':
+            return "monster"
+        else:
+            print_error("Invalid choice. Please enter 1, 2, 3, or 0.")
+
+def select_race() -> str:
+    """
+    NEW: Race selection helper
+    """
+    available_races = list(races.keys())
+    
+    print_subheader("Available Races")
+    for i, race in enumerate(available_races, 1):
+        print(f"{i}. {race.title()}")
+    
+    while True:
+        choice = input("\nEnter race (number or name): ").strip()
+        
+        # Try to parse as number first
+        try:
+            race_num = int(choice)
+            if 1 <= race_num <= len(available_races):
+                return available_races[race_num - 1]
+            else:
+                print_error(f"Please enter a number between 1 and {len(available_races)}")
+                continue
+        except ValueError:
+            # Try to match by name
+            race_choice = choice.lower()
+            if race_choice in available_races:
+                return race_choice
+            else:
+                print_error(f"Invalid race: {choice}")
+                continue
+
+# ============================================================================
 # Character Management Functions
 # ============================================================================
 
 def create_character(item_repository) -> Character:
     """Create a new character with calculated progression bonuses."""
+    character_type = select_character_type()
+    if not character_type:
+        return None
+    
+    if character_type in RACE_LEVELING_TYPES:
+        return create_familiar_or_monster(character_type, item_repository)
+    else:
+        return create_regular_character(item_repository)
+
+def create_regular_character(item_repository) -> Character:
+    """Create a regular character with class and profession."""
     clear_screen()
     print_header("Create a New Character")
     
@@ -142,12 +215,15 @@ def create_character(item_repository) -> Character:
         print_error("Name cannot be empty.")
     
     # Collect meta information
-    meta = {}
+    meta = {"Character Type": "character"}
     print_subheader(f"Enter information for {name}")
     
     for info in META_INFO:
-        while True:
-            if "level" in info.lower():
+        if info == "Character Type":
+            continue  # Already set
+        
+        if "level" in info.lower():
+            while True:
                 try:
                     value = input(f"{info}: ").strip()
                     if not value:
@@ -157,10 +233,9 @@ def create_character(item_repository) -> Character:
                     break
                 except ValueError:
                     print_error("Please enter a valid integer.")
-            else:
-                value = input(f"{info}: ").strip()
-                meta[info] = value
-                break
+        else:
+            value = input(f"{info}: ").strip()
+            meta[info] = value
     
     # Collect base stats
     print_subheader(f"Enter base stats for {name}")
@@ -190,8 +265,88 @@ def create_character(item_repository) -> Character:
     pause_screen()
     return character
 
+def create_familiar_or_monster(character_type: str, item_repository) -> Character:
+    """
+    NEW: Create a familiar or monster
+    """
+    clear_screen()
+    print_header(f"Create a New {character_type.capitalize()}")
+    
+    # Get name
+    while True:
+        name = input(f"Enter {character_type} name: ").strip()
+        if name:
+            break
+        print_error("Name cannot be empty.")
+    
+    # Get race
+    race = select_race()
+    
+    # Get race level
+    while True:
+        try:
+            race_level = input(f"Enter starting race level (default: 1): ").strip()
+            if not race_level:
+                race_level = 1
+            else:
+                race_level = int(race_level)
+            
+            if race_level < 1:
+                print_error("Race level must be at least 1.")
+                continue
+            
+            break
+        except ValueError:
+            print_error("Please enter a valid integer.")
+    
+    # Collect base stats
+    print_subheader(f"Enter base stats for {name}")
+    print_info("Default value is 5 if left empty.")
+    
+    stats = {}
+    for stat in STATS:
+        while True:
+            try:
+                value = input(f"{stat.capitalize()}: ").strip()
+                if not value:
+                    value = "5"  # Default value
+                stats[stat] = int(value)
+                break
+            except ValueError:
+                print_error("Please enter a valid integer.")
+    
+    # Create character using appropriate factory method
+    if character_type == "familiar":
+        character = Character.create_familiar(
+            name=name,
+            race=race,
+            race_level=race_level,
+            stats=stats,
+            item_repository=item_repository
+        )
+    else:  # monster
+        character = Character.create_monster(
+            name=name,
+            race=race,
+            race_level=race_level,
+            stats=stats,
+            item_repository=item_repository
+        )
+    
+    print_success(f"{character_type.capitalize()} {name} created successfully!")
+    pause_screen()
+    return character
+
 def create_advanced_character(item_repository) -> Character:
     """Create a character with full tier history input."""
+    character_type = select_character_type()
+    if not character_type:
+        return None
+    
+    if character_type in RACE_LEVELING_TYPES:
+        print_info(f"{character_type.capitalize()}s use the standard creation method.")
+        return create_familiar_or_monster(character_type, item_repository)
+    
     clear_screen()
     print_header("Create Advanced Character")
     
@@ -224,10 +379,13 @@ def create_advanced_character(item_repository) -> Character:
     print_success(f"Tier thresholds set to: {tier_thresholds}")
     
     # Collect meta information
-    meta = {}
+    meta = {"Character Type": "character"}
     print_subheader(f"Enter information for {name}")
     
     for info in META_INFO:
+        if info == "Character Type":
+            continue  # Already set
+        
         if info in ["Class level", "Profession level"]:
             while True:
                 try:
@@ -439,6 +597,10 @@ def create_advanced_character(item_repository) -> Character:
 
 def create_manual_character(item_repository) -> Character:
     """Create a character with manual stat and level entry (no calculations)."""
+    character_type = select_character_type()
+    if not character_type:
+        return None
+    
     clear_screen()
     print_header("Create Custom Character")
     print_info("Enter final stats directly. No progression rules will be applied or validated.")
@@ -451,32 +613,45 @@ def create_manual_character(item_repository) -> Character:
             break
         print_error("Name cannot be empty.")
     
-    # Get tier thresholds
-    print_subheader(f"Tier Thresholds for {name}")
-    print_info("Enter the levels where tier changes occur (e.g., 25, 50, 75)")
-    print_info("Default: [25] - press Enter to use default")
-    
-    while True:
-        try:
-            threshold_input = input("Enter tier thresholds (comma-separated): ").strip()
-            if not threshold_input:
-                tier_thresholds = DEFAULT_TIER_THRESHOLDS.copy()
-                break
-            else:
-                tier_thresholds = [int(x.strip()) for x in threshold_input.split(',')]
-                tier_thresholds = sorted(list(set(tier_thresholds)))
-                break
-        except ValueError:
-            print_error("Please enter valid integers separated by commas.")
-    
-    print_success(f"Tier thresholds set to: {tier_thresholds}")
+    # Get tier thresholds (only for regular characters)
+    tier_thresholds = DEFAULT_TIER_THRESHOLDS.copy()
+    if character_type == "character":
+        print_subheader(f"Tier Thresholds for {name}")
+        print_info("Enter the levels where tier changes occur (e.g., 25, 50, 75)")
+        print_info("Default: [25] - press Enter to use default")
+        
+        while True:
+            try:
+                threshold_input = input("Enter tier thresholds (comma-separated): ").strip()
+                if not threshold_input:
+                    tier_thresholds = DEFAULT_TIER_THRESHOLDS.copy()
+                    break
+                else:
+                    tier_thresholds = [int(x.strip()) for x in threshold_input.split(',')]
+                    tier_thresholds = sorted(list(set(tier_thresholds)))
+                    break
+            except ValueError:
+                print_error("Please enter valid integers separated by commas.")
+        
+        print_success(f"Tier thresholds set to: {tier_thresholds}")
     
     # Collect meta information
-    meta = {}
+    meta = {"Character Type": character_type}
     print_subheader(f"Enter information for {name}")
     
     for info in META_INFO:
-        if info in ["Class level", "Profession level"]:
+        if info == "Character Type":
+            continue  # Already set
+        
+        # Skip class/profession for familiars/monsters
+        if character_type in RACE_LEVELING_TYPES and ("Class" in info or "Profession" in info):
+            if "level" in info:
+                meta[info] = "0"
+            else:
+                meta[info] = ""
+            continue
+        
+        if info in ["Class level", "Profession level", "Race level"]:
             while True:
                 try:
                     value = input(f"{info}: ").strip()
@@ -518,25 +693,26 @@ def create_manual_character(item_repository) -> Character:
         except ValueError:
             print_error("Please enter a valid integer.")
     
-    # Create class and profession history if levels > 0
+    # Create class and profession history if levels > 0 (only for regular characters)
     class_history = []
     profession_history = []
     
-    class_level = int(meta.get("Class level", "0"))
-    if class_level > 0 and meta.get("Class"):
-        class_history = [{
-            "class": meta["Class"],
-            "from_level": 1,
-            "to_level": None
-        }]
-    
-    profession_level = int(meta.get("Profession level", "0"))
-    if profession_level > 0 and meta.get("Profession"):
-        profession_history = [{
-            "profession": meta["Profession"],
-            "from_level": 1,
-            "to_level": None
-        }]
+    if character_type == "character":
+        class_level = int(meta.get("Class level", "0"))
+        if class_level > 0 and meta.get("Class"):
+            class_history = [{
+                "class": meta["Class"],
+                "from_level": 1,
+                "to_level": None
+            }]
+        
+        profession_level = int(meta.get("Profession level", "0"))
+        if profession_level > 0 and meta.get("Profession"):
+            profession_history = [{
+                "profession": meta["Profession"],
+                "from_level": 1,
+                "to_level": None
+            }]
     
     # Create character with manual creation flag
     print_loading("Creating manual character")
@@ -551,8 +727,11 @@ def create_manual_character(item_repository) -> Character:
         item_repository=item_repository
     )
     
-    print_success(f"Manual character {name} created successfully!")
-    print_info(f"Race level automatically calculated as: {character.data_manager.get_meta('Race level')}")
+    print_success(f"Manual {character_type} {name} created successfully!")
+    
+    # For regular characters, show calculated race level
+    if character_type == "character":
+        print_info(f"Race level automatically calculated as: {character.data_manager.get_meta('Race level')}")
     
     # Show final character summary
     print_subheader("Character Summary")
@@ -572,10 +751,12 @@ def create_manual_character(item_repository) -> Character:
 
 def create_reverse_engineered_character(item_repository) -> Character:
     """Create a character that follows progression rules via reverse engineering."""
+    # Only allow regular characters for reverse engineering
     clear_screen()
     print_header("Create Reverse-Engineered Character")
     print_info("Enter base stats and current stats. The system will reverse-engineer stat allocation.")
     print_warning("This character must follow class/profession/race progression rules!")
+    print_warning("Note: This method is only available for regular characters, not familiars/monsters.")
     print()
     print_colored("This mode is perfect for:", 'cyan')
     print("• Importing characters from other character sheets")
@@ -612,10 +793,13 @@ def create_reverse_engineered_character(item_repository) -> Character:
     print_success(f"Tier thresholds set to: {tier_thresholds}")
     
     # Collect meta information
-    meta = {}
+    meta = {"Character Type": "character"}  # Force to character type
     print_subheader(f"Enter character information for {name}")
     
     for info in META_INFO:
+        if info == "Character Type":
+            continue  # Already set
+        
         if info in ["Class level", "Profession level"]:
             while True:
                 try:
@@ -760,7 +944,7 @@ def create_reverse_engineered_character(item_repository) -> Character:
                     "to_level": None
                 })
     
-    # NEW: Create race history if needed (following same pattern)
+    # Create race history if needed (following same pattern)
     race_history = []
     if calculated_race_level > 0:
         current_race = meta.get("Race", "")
@@ -970,7 +1154,7 @@ def create_reverse_engineered_character(item_repository) -> Character:
             tier_thresholds=tier_thresholds,
             class_history=class_history,
             profession_history=profession_history,
-            race_history=race_history,  # NEW: Include race history
+            race_history=race_history,  # Include race history
             item_repository=item_repository
         )
         
@@ -1206,7 +1390,8 @@ def load_character(item_repository) -> Tuple[Optional[Character], Optional[str]]
 def view_character(character: Character):
     """Display detailed character information."""
     clear_screen()
-    print_header(f"Character Details: {character.name}")
+    character_type = character.data_manager.get_meta("Character Type", "character")
+    print_header(f"Character Details: {character.name} ({character_type.capitalize()})")
     
     # Meta information
     print_subheader("Character Info")
@@ -1258,9 +1443,33 @@ def view_character(character: Character):
 def view_character_history(character: Character):
     """Display character's class, profession, and race history."""
     clear_screen()
-    print_header(f"Character History: {character.name}")
+    character_type = character.data_manager.get_meta("Character Type", "character")
+    print_header(f"Character History: {character.name} ({character_type.capitalize()})")
     
-    # Display tier thresholds and summary
+    # NEW: For familiars/monsters, show different information
+    if character.is_race_leveling_type():
+        print_subheader("Race Progression")
+        race_level = int(character.data_manager.get_meta("Race level", "0"))
+        race = character.data_manager.get_meta("Race", "")
+        print(f"Race: {race}")
+        print(f"Race Level: {race_level}")
+        
+        if character.data_manager.race_history:
+            print_subheader("Race History")
+            for entry in character.data_manager.race_history:
+                level_range = f"Race Level {entry['from_race_level']}"
+                if entry['to_race_level'] is not None:
+                    level_range += f"-{entry['to_race_level']}"
+                else:
+                    level_range += "+"
+                print(f"  {entry['race']} ({level_range})")
+        else:
+            print_info("No race history changes.")
+        
+        pause_screen()
+        return
+    
+    # Display tier thresholds and summary for regular characters
     print_subheader("Tier Information")
     print(f"Tier thresholds: {character.data_manager.tier_thresholds}")
     
@@ -1302,7 +1511,7 @@ def view_character_history(character: Character):
     else:
         print_info("No profession history available.")
     
-    # NEW: Display race history
+    # Display race history
     if character.data_manager.race_history:
         print_subheader("Race History")
         for entry in character.data_manager.race_history:
@@ -1316,12 +1525,13 @@ def view_character_history(character: Character):
         print_info("No race history available.")
     
     pause_screen()
-    
+
 def manage_race_history(character: Character):
     """Manage character's race history."""
     while True:
         clear_screen()
-        print_header(f"Race History Management: {character.name}")
+        character_type = character.data_manager.get_meta("Character Type", "character")
+        print_header(f"Race History Management: {character.name} ({character_type.capitalize()})")
         
         # Display current race and level
         current_race = character.data_manager.get_meta("Race", "")
@@ -1360,7 +1570,7 @@ def manage_race_history(character: Character):
         else:
             print_error("Invalid choice.")
             pause_screen()
-            
+
 def add_race_change(character: Character):
     """Add a race change to the character's history."""
     clear_screen()
@@ -1444,7 +1654,7 @@ def add_race_change(character: Character):
         print_info("Race change cancelled.")
     
     pause_screen()
-    
+
 def view_race_progression(character: Character):
     """View detailed race progression breakdown."""
     clear_screen()
@@ -1492,7 +1702,8 @@ def view_race_progression(character: Character):
 def validate_character_stats(character: Character):
     """Enhanced validation display with automatic conversion and free point auto-correction."""
     clear_screen()
-    print_header(f"Character Validation: {character.name}")
+    character_type = character.data_manager.get_meta("Character Type", "character")
+    print_header(f"Character Validation: {character.name} ({character_type.capitalize()})")
     
     # Show current character type
     creation_info = character.get_creation_info()
@@ -1563,6 +1774,18 @@ def validate_character_stats(character: Character):
                 status = discrepancy["status"]
                 diff = discrepancy["difference"]
                 print_error(f"{stat}: {status} by {abs(diff)} points")
+    
+    elif validation_result.get("validation_type") == "race_leveling":
+        # NEW: Show race-leveling character validation
+        print_subheader(f"{character_type.capitalize()} Validation")
+        if validation_result.get("stat_discrepancies"):
+            for stat, discrepancy in validation_result["stat_discrepancies"].items():
+                if "level" in stat:
+                    print_error(f"{stat}: {discrepancy}")
+                else:
+                    status = discrepancy.get("status", "error")
+                    diff = discrepancy.get("difference", 0)
+                    print_error(f"{stat}: {status} by {abs(diff)} points")
     
     # Show auto-correction details
     if not validation_result.get("free_points_auto_corrected", False):
@@ -1655,7 +1878,8 @@ def show_detailed_stat_breakdown(character: Character, validation_result: Dict[s
 def update_stats(character: Character):
     """Update character stats."""
     clear_screen()
-    print_header(f"Update Stats: {character.name}")
+    character_type = character.data_manager.get_meta("Character Type", "character")
+    print_header(f"Update Stats: {character.name} ({character_type.capitalize()})")
     
     # Display current stats
     print_subheader("Current Stats")
@@ -1698,7 +1922,8 @@ def update_stats(character: Character):
 def update_meta(character: Character):
     """Update character meta information."""
     clear_screen()
-    print_header(f"Update Meta Info: {character.name}")
+    character_type = character.data_manager.get_meta("Character Type", "character")
+    print_header(f"Update Meta Info: {character.name} ({character_type.capitalize()})")
     
     # Display current meta info
     print_subheader("Current Meta Info")
@@ -1717,6 +1942,20 @@ def update_meta(character: Character):
         pause_screen()
         return
     
+    # NEW: Prevent changing character type for race-leveling characters
+    if info == "Character Type":
+        current_type = character.data_manager.get_meta("Character Type", "character")
+        if current_type in RACE_LEVELING_TYPES:
+            print_error(f"Cannot change character type for {current_type}s.")
+            pause_screen()
+            return
+    
+    # NEW: Prevent class/profession updates for familiars/monsters
+    if character.is_race_leveling_type() and ("Class" in info or "Profession" in info):
+        print_error(f"{character_type.capitalize()}s cannot have {info.lower()}s.")
+        pause_screen()
+        return
+    
     # Get new value
     value = input(f"Enter new value for {info}: ").strip()
     
@@ -1731,9 +1970,13 @@ def update_meta(character: Character):
     pause_screen()
 
 def level_up_character(character: Character):
-    """Level up a character with dynamic tier change detection."""
+    """
+    Level up a character with dynamic tier change detection.
+    UPDATED: Added support for race level up for familiars/monsters
+    """
     clear_screen()
-    print_header(f"Level Up: {character.name}")
+    character_type = character.data_manager.get_meta("Character Type", "character")
+    print_header(f"Level Up: {character.name} ({character_type.capitalize()})")
     
     # Display current levels
     print_subheader("Current Levels")
@@ -1741,20 +1984,25 @@ def level_up_character(character: Character):
         if "level" in info.lower():
             print(f"{info}: {value}")
     
-    # Display tier thresholds
-    print_info(f"Tier thresholds: {character.data_manager.tier_thresholds}")
-    
-    # Get level type
-    print()
-    level_type = input("Enter level type (Class or Profession, or 'cancel'): ").strip()
-    
-    if level_type.lower() == 'cancel':
-        return
-    
-    if level_type.lower() not in ["class", "profession"]:
-        print_error("Invalid level type. Must be 'Class' or 'Profession'.")
-        pause_screen()
-        return
+    # NEW: Different level type options based on character type
+    if character.is_race_leveling_type():
+        print_info(f"{character_type.capitalize()}s can only level up through race levels.")
+        level_type = "Race"
+    else:
+        # Display tier thresholds for regular characters
+        print_info(f"Tier thresholds: {character.data_manager.tier_thresholds}")
+        
+        # Get level type
+        print()
+        level_type = input("Enter level type (Class, Profession, or Race, or 'cancel'): ").strip()
+        
+        if level_type.lower() == 'cancel':
+            return
+        
+        if level_type.lower() not in ["class", "profession", "race"]:
+            print_error("Invalid level type. Must be 'Class', 'Profession', or 'Race'.")
+            pause_screen()
+            return
     
     # Get current level
     try:
@@ -1768,7 +2016,34 @@ def level_up_character(character: Character):
             pause_screen()
             return
             
-        # Check if crossing ANY tier threshold using character's thresholds
+        # NEW: Special handling for race level up (no tier thresholds to check)
+        if level_type.lower() == "race":
+            print_loading(f"Leveling up {level_type}")
+            
+            success = character.level_up(level_type, target_level)
+            
+            if success:
+                print_success(f"Leveled up {level_type} to {target_level}")
+                
+                # Display stat gains
+                print_subheader("Updated Stats")
+                for stat in STATS:
+                    print(f"{stat.capitalize()}: {character.data_manager.get_stat(stat)}")
+                
+                # Check for free points
+                if character.level_system.free_points > 0:
+                    print_info(f"You have {character.level_system.free_points} free points to allocate.")
+                
+                # Ask about blessing
+                if confirm_action("Do you want to add a blessing?"):
+                    add_blessing(character)
+            else:
+                print_error(f"Failed to level up {level_type}.")
+            
+            pause_screen()
+            return
+        
+        # Check if crossing ANY tier threshold using character's thresholds (for class/profession)
         next_threshold = character.data_manager.get_next_tier_threshold(current_level)
         
         if next_threshold and current_level < next_threshold <= target_level:
@@ -1924,9 +2199,12 @@ def level_up_character(character: Character):
         print_error("Please enter valid integer values for levels.")
     
     pause_screen()
-    
+
 def bulk_level_characters(item_repository):
-    """Bulk level multiple characters from a CSV file with level type and target level."""
+    """
+    Bulk level multiple characters from a CSV file with level type and target level.
+    UPDATED: Added support for race level ups
+    """
     clear_screen()
     print_header("Bulk Level Characters")
     
@@ -1995,13 +2273,13 @@ def bulk_level_characters(item_repository):
                 name = row[0].strip()
                 level_type = row[1].strip()
                 
-                # Validate level type and normalize case
-                if level_type.lower() not in ["class", "profession"]:
-                    print_error(f"Row {row_num}: Invalid level type '{level_type}'. Must be 'Class' or 'Profession'.")
+                # NEW: Validate level type and normalize case (now includes Race)
+                if level_type.lower() not in ["class", "profession", "race"]:
+                    print_error(f"Row {row_num}: Invalid level type '{level_type}'. Must be 'Class', 'Profession', or 'Race'.")
                     continue
                 
                 # Normalize case to match META_INFO constants
-                level_type = level_type.lower().capitalize()  # "class" -> "Class", "profession" -> "Profession"
+                level_type = level_type.lower().capitalize()  # "class" -> "Class", "profession" -> "Profession", "race" -> "Race"
                 
                 # Validate target level
                 try:
@@ -2053,13 +2331,30 @@ def bulk_level_characters(item_repository):
         
         # Load the character
         try:
-            character = Character.load(character_file, name, item_repository)
+            character = Character.load_from_file(character_file, name, item_repository)
             
             if not character:
                 print_error(f"Character '{name}' not found in {character_file}.")
                 errors += 1
                 pause_screen()  # Pause for errors
                 continue
+            
+            # NEW: Check character type compatibility with level type
+            character_type = character.data_manager.get_meta("Character Type", "character")
+            
+            if character.is_race_leveling_type() and level_type.lower() in ["class", "profession"]:
+                print_error(f"{name} is a {character_type} and cannot level up in {level_type}.")
+                print_info("Use race level up instead.")
+                errors += 1
+                pause_screen()
+                continue
+            
+            if not character.is_race_leveling_type() and level_type.lower() == "race":
+                print_warning(f"{name} is a regular character. Race levels are calculated automatically from class/profession levels.")
+                print_info("Consider using class or profession level up instead.")
+                if not confirm_action("Continue with race level up anyway?"):
+                    skipped += 1
+                    continue
             
             # Check current level
             current_level = int(character.data_manager.get_meta(f"{level_type} level", "0"))
@@ -2073,113 +2368,115 @@ def bulk_level_characters(item_repository):
             print_info(f"Current {level_type} level: {current_level}")
             print_info(f"Target {level_type} level: {target_level}")
             
-            # Check for tier changes using existing logic from level_up_character()
+            # Check for tier changes using existing logic from level_up_character() (only for class/profession)
             needs_pause = False  # Track if user interaction occurred
-            next_threshold = character.data_manager.get_next_tier_threshold(current_level)
             
-            if next_threshold and current_level < next_threshold <= target_level:
-                needs_pause = True  # Tier change requires user input
-                current_tier = get_tier_for_level(current_level, character.data_manager.tier_thresholds)
-                next_tier = current_tier + 1
+            if level_type.lower() in ["class", "profession"]:
+                next_threshold = character.data_manager.get_next_tier_threshold(current_level)
                 
-                print_subheader(f"Tier Change Required for {name}")
-                print_warning(f"Character will advance to tier {next_tier} at level {next_threshold}!")
-                
-                if level_type.lower() == "class":
-                    # Get available classes for the next tier
-                    available_classes = get_available_classes_for_tier(next_tier)
+                if next_threshold and current_level < next_threshold <= target_level:
+                    needs_pause = True  # Tier change requires user input
+                    current_tier = get_tier_for_level(current_level, character.data_manager.tier_thresholds)
+                    next_tier = current_tier + 1
                     
-                    if not available_classes:
-                        print_error(f"No tier {next_tier} classes available!")
-                        errors += 1
-                        pause_screen()
-                        continue
+                    print_subheader(f"Tier Change Required for {name}")
+                    print_warning(f"Character will advance to tier {next_tier} at level {next_threshold}!")
                     
-                    # Display options
-                    print_subheader(f"Available Tier {next_tier} Classes")
-                    for j, class_name in enumerate(available_classes, 1):
-                        print(f"{j}. {class_name}")
-                    
-                    # Get selection
-                    while True:
-                        selection = input(f"\nEnter new tier {next_tier} class for {name} (number or name): ").strip()
+                    if level_type.lower() == "class":
+                        # Get available classes for the next tier
+                        available_classes = get_available_classes_for_tier(next_tier)
                         
-                        # Try to parse as number first
-                        try:
-                            choice_num = int(selection)
-                            if 1 <= choice_num <= len(available_classes):
-                                new_class = available_classes[choice_num - 1]
-                                break
-                            else:
-                                print_error(f"Please enter a number between 1 and {len(available_classes)}")
-                                continue
-                        except ValueError:
-                            # Try to match by name
-                            new_class = selection.lower()
-                            if validate_class_tier_combination(new_class, next_tier):
-                                break
-                            else:
-                                print_error(f"Invalid tier {next_tier} class: {selection}")
-                                continue
-                    
-                    # Change class before leveling up
-                    success = character.change_class(new_class, next_threshold)
-                    if not success:
-                        print_error("Failed to change class.")
-                        errors += 1
-                        pause_screen()
-                        continue
+                        if not available_classes:
+                            print_error(f"No tier {next_tier} classes available!")
+                            errors += 1
+                            pause_screen()
+                            continue
                         
-                    print_success(f"Class changed to {new_class} at level {next_threshold}")
-                
-                elif level_type.lower() == "profession":
-                    # Get available professions for the next tier
-                    available_professions = get_available_professions_for_tier(next_tier)
-                    
-                    if not available_professions:
-                        print_error(f"No tier {next_tier} professions available!")
-                        errors += 1
-                        pause_screen()
-                        continue
-                    
-                    # Display options
-                    print_subheader(f"Available Tier {next_tier} Professions")
-                    for j, profession_name in enumerate(available_professions, 1):
-                        print(f"{j}. {profession_name}")
-                    
-                    # Get selection
-                    while True:
-                        selection = input(f"\nEnter new tier {next_tier} profession for {name} (number or name): ").strip()
+                        # Display options
+                        print_subheader(f"Available Tier {next_tier} Classes")
+                        for j, class_name in enumerate(available_classes, 1):
+                            print(f"{j}. {class_name}")
                         
-                        # Try to parse as number first
-                        try:
-                            choice_num = int(selection)
-                            if 1 <= choice_num <= len(available_professions):
-                                new_profession = available_professions[choice_num - 1]
-                                break
-                            else:
-                                print_error(f"Please enter a number between 1 and {len(available_professions)}")
-                                continue
-                        except ValueError:
-                            # Try to match by name
-                            new_profession = selection.lower()
-                            if validate_profession_tier_combination(new_profession, next_tier):
-                                break
-                            else:
-                                print_error(f"Invalid tier {next_tier} profession: {selection}")
-                                continue
-                    
-                    # Change profession before leveling up
-                    success = character.change_profession(new_profession, next_threshold)
-                    if not success:
-                        print_error("Failed to change profession.")
-                        errors += 1
-                        pause_screen()
-                        continue
+                        # Get selection
+                        while True:
+                            selection = input(f"\nEnter new tier {next_tier} class for {name} (number or name): ").strip()
+                            
+                            # Try to parse as number first
+                            try:
+                                choice_num = int(selection)
+                                if 1 <= choice_num <= len(available_classes):
+                                    new_class = available_classes[choice_num - 1]
+                                    break
+                                else:
+                                    print_error(f"Please enter a number between 1 and {len(available_classes)}")
+                                    continue
+                            except ValueError:
+                                # Try to match by name
+                                new_class = selection.lower()
+                                if validate_class_tier_combination(new_class, next_tier):
+                                    break
+                                else:
+                                    print_error(f"Invalid tier {next_tier} class: {selection}")
+                                    continue
                         
-                    print_success(f"Profession changed to {new_profession} at level {next_threshold}")
+                        # Change class before leveling up
+                        success = character.change_class(new_class, next_threshold)
+                        if not success:
+                            print_error("Failed to change class.")
+                            errors += 1
+                            pause_screen()
+                            continue
+                            
+                        print_success(f"Class changed to {new_class} at level {next_threshold}")
+                    
+                    elif level_type.lower() == "profession":
+                        # Get available professions for the next tier
+                        available_professions = get_available_professions_for_tier(next_tier)
+                        
+                        if not available_professions:
+                            print_error(f"No tier {next_tier} professions available!")
+                            errors += 1
+                            pause_screen()
+                            continue
+                        
+                        # Display options
+                        print_subheader(f"Available Tier {next_tier} Professions")
+                        for j, profession_name in enumerate(available_professions, 1):
+                            print(f"{j}. {profession_name}")
+                        
+                        # Get selection
+                        while True:
+                            selection = input(f"\nEnter new tier {next_tier} profession for {name} (number or name): ").strip()
+                            
+                            # Try to parse as number first
+                            try:
+                                choice_num = int(selection)
+                                if 1 <= choice_num <= len(available_professions):
+                                    new_profession = available_professions[choice_num - 1]
+                                    break
+                                else:
+                                    print_error(f"Please enter a number between 1 and {len(available_professions)}")
+                                    continue
+                            except ValueError:
+                                # Try to match by name
+                                new_profession = selection.lower()
+                                if validate_profession_tier_combination(new_profession, next_tier):
+                                    break
+                                else:
+                                    print_error(f"Invalid tier {next_tier} profession: {selection}")
+                                    continue
+                        
+                        # Change profession before leveling up
+                        success = character.change_profession(new_profession, next_threshold)
+                        if not success:
+                            print_error("Failed to change profession.")
+                            errors += 1
+                            pause_screen()
+                            continue
+                            
+                        print_success(f"Profession changed to {new_profession} at level {next_threshold}")
             
-            # Level up the character (no loading screen)
+            # Now proceed with level up (no loading screen)
             success = character.level_up(level_type, target_level)
             
             if not success:
@@ -2246,7 +2543,7 @@ def bulk_level_characters(item_repository):
     print_header("Bulk Leveling Complete")
     print_success(f"Successfully processed: {processed} operations")
     if skipped > 0:
-        print_info(f"Skipped (already at target level): {skipped} operations")
+        print_info(f"Skipped (already at target level or type mismatch): {skipped} operations")
     if errors > 0:
         print_error(f"Errors encountered: {errors} operations")
     
@@ -2255,7 +2552,8 @@ def bulk_level_characters(item_repository):
 def allocate_points(character: Character):
     """Allocate free points to character stats."""
     clear_screen()
-    print_header(f"Allocate Free Points: {character.name}")
+    character_type = character.data_manager.get_meta("Character Type", "character")
+    print_header(f"Allocate Free Points: {character.name} ({character_type.capitalize()})")
     
     free_points = character.level_system.free_points
     
@@ -2351,7 +2649,8 @@ def allocate_points(character: Character):
 def add_blessing(character: Character):
     """Add a blessing with stat bonuses."""
     clear_screen()
-    print_header(f"Add Blessing: {character.name}")
+    character_type = character.data_manager.get_meta("Character Type", "character")
+    print_header(f"Add Blessing: {character.name} ({character_type.capitalize()})")
     
     if hasattr(character, 'blessing') and character.blessing:
         print_warning("Character already has a blessing:")
@@ -2392,7 +2691,7 @@ def add_blessing(character: Character):
             print_error(f"Invalid stat. Available stats: {', '.join(STATS)}")
             pause_screen()
             clear_screen()
-            print_header(f"Add Blessing: {character.name}")
+            print_header(f"Add Blessing: {character.name} ({character_type.capitalize()})")
             continue
         
         # Get blessing value
@@ -2411,7 +2710,7 @@ def add_blessing(character: Character):
         
         pause_screen()
         clear_screen()
-        print_header(f"Add Blessing: {character.name}")
+        print_header(f"Add Blessing: {character.name} ({character_type.capitalize()})")
     
     # Apply the blessing
     if blessing_stats:
@@ -2424,7 +2723,8 @@ def add_blessing(character: Character):
 def save_character(character: Character, file: str = None):
     """Save a character to a CSV file."""
     clear_screen()
-    print_header(f"Save Character: {character.name}")
+    character_type = character.data_manager.get_meta("Character Type", "character")
+    print_header(f"Save Character: {character.name} ({character_type.capitalize()})")
     
     if not file:
         filename = input("Enter the CSV filename to save to: ").strip()
@@ -2452,14 +2752,14 @@ def save_character(character: Character, file: str = None):
 def create_character_sheet(character: Character):
     """Create a CSV character sheet with stats and modifiers."""
     clear_screen()
-    print_header(f"Create Character Sheet: {character.name}")
+    character_type = character.data_manager.get_meta("Character Type", "character")
+    print_header(f"Create Character Sheet: {character.name} ({character_type.capitalize()})")
     
     filename = f"{character.name.lower().replace(' ', '_')}_character_sheet.csv"
     
     try:
         print_loading("Creating character sheet")
         
-        import csv
         with open(filename, "w", newline="") as file:
             writer = csv.writer(file)
             
@@ -3003,11 +3303,20 @@ def reset_equipment(character: Character):
     pause_screen()
 
 # ============================================================================
-# Tier Management
+# Tier Management (only for regular characters)
 # ============================================================================
 
 def manage_tier_thresholds(character: Character):
-    """Manage character's tier thresholds."""
+    """Manage character's tier thresholds (only for regular characters)."""
+    if character.is_race_leveling_type():
+        clear_screen()
+        character_type = character.data_manager.get_meta("Character Type", "character")
+        print_header("Tier Threshold Management")
+        print_error(f"{character_type.capitalize()}s do not use tier thresholds.")
+        print_info("Tier thresholds are only used for regular characters with class/profession levels.")
+        pause_screen()
+        return
+    
     while True:
         clear_screen()
         print_header(f"Tier Threshold Management: {character.name}")
@@ -3324,7 +3633,7 @@ def preview_threshold_changes(character: Character):
     pause_screen()
 
 def print_main_menu(character: Optional[Character] = None):
-    """Print the main menu with race history option."""
+    """Print the main menu with familiar/monster support."""
     clear_screen()
     
     if character is None:
@@ -3337,7 +3646,8 @@ def print_main_menu(character: Optional[Character] = None):
         print("6. Bulk level characters")
         print("0. Exit")
     else:
-        print_header(f"Character: {character.name}")
+        character_type = character.data_manager.get_meta("Character Type", "character")
+        print_header(f"{character_type.capitalize()}: {character.name}")
         print_subheader("Character Menu")
         print("1. View character details")
         print("2. View character history")
@@ -3352,7 +3662,7 @@ def print_main_menu(character: Optional[Character] = None):
         print("11. Add blessing")
         print("12. Validate character stats")
         print("13. Manage tier thresholds")
-        print("14. Manage race history")  # NEW
+        print("14. Manage race history")
         print("15. Start over (unload character)")
         print("0. Exit")
 
@@ -3361,7 +3671,7 @@ def print_main_menu(character: Optional[Character] = None):
 # ============================================================================
 
 def main():
-    """Main application entry point with race history support."""
+    """Main application entry point with familiar/monster support."""
     # Initialize item repository
     try:
         item_repository = ItemRepository(items)
@@ -3378,7 +3688,7 @@ def main():
         choice = input("\nEnter your choice: ").strip()
         
         if character is None:
-            # Character creation menu (unchanged)
+            # Character creation menu
             if choice == '1':
                 character = create_character(item_repository)
             elif choice == '2':
@@ -3398,11 +3708,11 @@ def main():
                 print_error("Invalid choice.")
                 pause_screen()
         else:
-            # Character loaded menu (ADD NEW OPTION)
+            # Character loaded menu
             if choice == '1':
                 view_character(character)
             elif choice == '2':
-                view_character_history(character)  # Now includes race history
+                view_character_history(character)
             elif choice == '3':
                 update_stats(character)
             elif choice == '4':
@@ -3425,9 +3735,9 @@ def main():
                 validate_character_stats(character)
             elif choice == '13':
                 manage_tier_thresholds(character)
-            elif choice == '14':  # NEW
+            elif choice == '14':
                 manage_race_history(character)
-            elif choice == '15':  # Updated number
+            elif choice == '15':
                 if confirm_action("Are you sure you want to unload the current character?"):
                     character = None
                     save_file = None
