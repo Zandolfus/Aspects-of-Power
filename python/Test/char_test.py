@@ -10,7 +10,7 @@ import random
 import csv
 from typing import Optional, Dict, Any, Tuple
 from Character_Creator import (
-    Character, ItemRepository, STATS, META_INFO, StatValidator, RACE_LEVELING_TYPES
+    Character, ItemRepository, STATS, META_INFO, StatValidator, CHARACTER_TYPES, RACE_LEVELING_TYPES
 )
 from tier_utils import (
     get_available_classes_for_tier, get_available_professions_for_tier,
@@ -2760,6 +2760,7 @@ def create_character_sheet(character: Character):
     try:
         print_loading("Creating character sheet")
         
+        import csv
         with open(filename, "w", newline="") as file:
             writer = csv.writer(file)
             

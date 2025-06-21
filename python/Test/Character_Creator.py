@@ -113,6 +113,10 @@ class CharacterDataManager:
                 self._meta[key] = "0"
             elif isinstance(self._meta[key], int):
                 self._meta[key] = str(self._meta[key])
+                
+        # Apply race level if character is a familiar or monster.
+        if self.is_race_leveling_type():
+            self._meta["Race level"] = meta.get("Race level", 0)
         
         # Initialize derived meta values (but don't calculate race levels here)
         if "Race level" not in self._meta:
@@ -1558,14 +1562,15 @@ class StatValidator:
             if StatSource.FREE_POINTS in sources:
                 free_points_spent += sources[StatSource.FREE_POINTS]
         
-        return max(0, total_free_points - free_points_spent)
+        return total_free_points - free_points_spent
     
     def _validate_race_leveling_character(self) -> Dict[str, Any]:
         """
-        NEW: Validate a familiar or monster that levels through race only.
+        ENHANCED: Validate a familiar or monster that levels through race only.
+        Now includes detailed free points analysis like regular characters.
         
         Returns:
-            Validation results for race-leveling character
+            Validation results for race-leveling character with full free points analysis
         """
         result = {
             "valid": True,
@@ -1596,15 +1601,14 @@ class StatValidator:
             result["stat_discrepancies"]["race_level"] = f"{character_type.capitalize()} must have a race level"
             result["valid"] = False
         
-        # 3. Calculate expected stats from race bonuses
+        # 3. ENHANCED: Calculate detailed expected stats from race bonuses (like regular characters)
         expected_race_stats = self._get_race_stats()
         base_stats = self._get_base_stats()
         item_stats = self._get_item_stats()
         blessing_stats = self._get_blessing_stats()
         
-        # Calculate expected free points
+        # Calculate expected free points from race progression
         expected_free_points = expected_race_stats.get("free_points", 0)
-        result["free_points"]["expected_total"] = expected_free_points
         
         # Calculate expected base stats (without free point allocation)
         expected_base_stats = {}
@@ -1620,16 +1624,32 @@ class StatValidator:
         actual_stats = self.character.data_manager.get_all_stats()
         stat_sources = {stat: self.character.data_manager.get_stat_sources(stat) for stat in STATS}
         
-        # Calculate free points spent
+        # Calculate free points spent on stats
         free_points_spent = 0
         for stat in STATS:
             sources = stat_sources[stat]
             if StatSource.FREE_POINTS in sources:
                 free_points_spent += sources[StatSource.FREE_POINTS]
         
-        result["free_points"]["spent"] = free_points_spent
+        # ENHANCED: Provide detailed free points analysis (same as regular characters)
+        current_remaining = max(0, self.character.level_system.free_points)
+        total_expected = expected_free_points
+        total_accounted = free_points_spent + current_remaining
+        difference = total_expected - total_accounted
         
-        # Check discrepancies for each stat
+        result["free_points"] = {
+            "expected_total": total_expected,
+            "spent": free_points_spent,
+            "current": current_remaining,
+            "difference": difference,
+            "free_points_match": difference == 0
+        }
+        
+        # Mark as invalid if free points don't balance
+        if difference != 0:
+            result["valid"] = False
+        
+        # 4. ENHANCED: Check discrepancies for each stat (like regular characters)
         for stat in STATS:
             # Expected value from all sources except free points
             expected_base = expected_base_stats[stat]
@@ -1656,17 +1676,7 @@ class StatValidator:
                     "status": "over_allocated" if diff > 0 else "under_allocated"
                 }
         
-        # Check overall free points balance
-        total_free_points_received = expected_free_points
-        total_free_points_accounted = free_points_spent + self.character.level_system.free_points
-        free_points_diff = total_free_points_received - total_free_points_accounted
-        
-        result["free_points"]["difference"] = free_points_diff
-        
-        if free_points_diff != 0:
-            result["valid"] = False
-        
-        # Store detailed information for reference
+        # 5. ENHANCED: Store detailed information for reference (like regular characters)
         result["details"] = {
             "base_stats": base_stats,
             "race_stats": expected_race_stats,
@@ -1674,10 +1684,26 @@ class StatValidator:
             "blessing_stats": blessing_stats,
             "expected_base_stats": expected_base_stats,
             "actual_stats": actual_stats,
-            "stat_sources": stat_sources
+            "stat_sources": stat_sources,
+            "stat_allocations": {}  # Add detailed stat allocation analysis
         }
         
-        # Create human-readable summary
+        # Add detailed stat allocation analysis for each stat
+        for stat in STATS:
+            result["details"]["stat_allocations"][stat] = {
+                "base": base_stats.get(stat, 5),
+                "class_bonus": 0,  # Familiars/monsters have no class bonuses
+                "profession_bonus": 0,  # Familiars/monsters have no profession bonuses
+                "race_bonus": expected_race_stats.get(stat, 0),
+                "item_bonus": item_stats.get(stat, 0),
+                "blessing_bonus": blessing_stats.get(stat, 0),
+                "free_points_allocated": stat_sources[stat].get(StatSource.FREE_POINTS, 0),
+                "expected_total": expected_base_stats[stat] + stat_sources[stat].get(StatSource.FREE_POINTS, 0),
+                "current": actual_stats[stat],
+                "discrepancy": actual_stats[stat] - (expected_base_stats[stat] + stat_sources[stat].get(StatSource.FREE_POINTS, 0))
+            }
+        
+        # 6. ENHANCED: Create detailed human-readable summary
         if result["valid"]:
             result["overall_summary"] = f"{character_type.capitalize()} follows race progression rules correctly"
         else:
@@ -1685,9 +1711,13 @@ class StatValidator:
             if any("level" in key for key in result["stat_discrepancies"]):
                 errors.append("inappropriate class/profession levels")
             if any("level" not in key for key in result["stat_discrepancies"]):
-                errors.append(f"{len([k for k in result['stat_discrepancies'] if 'level' not in k])} stat issues")
-            if free_points_diff != 0:
-                errors.append("free points mismatch")
+                stat_issues = [k for k in result['stat_discrepancies'] if 'level' not in k]
+                errors.append(f"{len(stat_issues)} stat issues")
+            if difference != 0:
+                if difference > 0:
+                    errors.append(f"missing {difference} free points")
+                else:
+                    errors.append(f"{abs(difference)} excess free points")
             result["overall_summary"] = f"{character_type.capitalize()} has problems: {', '.join(errors)}"
         
         return result

@@ -1,43 +1,49 @@
 --------------------------------------------------------------------------------
                           Detailed Validation for Phil
 --------------------------------------------------------------------------------
+Character Type: character
 Validation Type: reverse_engineered_manual
-Overall Summary: Reverse-engineered character has problems: 1 stat issues
+Overall Summary: Reverse-engineered character has problems: 5 stat issues
 
 Detailed Stat Allocation Analysis:
-Vitality: Base: 5 + Class: +24 + Profession: +60 + Race: +24 + Free Points: +77 = 190
+Vitality: Base: 5 + Class: +24 + Profession: +72 + Race: +24 + Free Points: +65 = 190
 Endurance: Base: 5 + Class: +24 + Race: +24 + Free Points: +29 = 82
-Strength: Base: 5 + Class: +144 + Profession: +30 + Race: +24 + Free Points: +39 = 242
-Dexterity: Base: 5 + Class: +168 + Race: +24 + Free Points: +24 = 221
-Toughness: Base: 5 + Class: +72 + Profession: +30 + Race: +24 + Free Points: +59 = 190
+Strength: Base: 5 + Class: +144 + Profession: +42 + Race: +24 + Free Points: +27 = 242
+Dexterity: Base: 5 + Class: +168 + Race: +84 = 221
+✗   ⚠ IMPOSSIBLE: dexterity needs 36 more points than available!
+Toughness: Base: 5 + Class: +72 + Profession: +36 + Race: +84 = 190
+✗   ⚠ IMPOSSIBLE: toughness needs 7 more points than available!
 Intelligence: Base: 5 + Race: +24 = 17
 ✗   ⚠ IMPOSSIBLE: intelligence needs 12 more points than available!
 Willpower: Base: 5 + Race: +24 + Free Points: +8 = 37
-Wisdom: Base: 5 + Class: +48 + Race: +24 + Free Points: +22 = 99
-Perception: Base: 5 + Profession: +60 + Race: +24 + Free Points: +22 = 111
+Wisdom: Base: 5 + Class: +48 + Race: +84 = 99
+✗   ⚠ IMPOSSIBLE: wisdom needs 38 more points than available!
+Perception: Base: 5 + Profession: +78 + Race: +84 = 111
+✗   ⚠ IMPOSSIBLE: perception needs 56 more points than available!
 
 Free Points Summary:
-Total Expected: 243
-Used in Allocation: 280
-Calculated Remaining: -37
-✗ Character has 37 excess free points
+Total Expected: 360
+Used in Allocation: 129
+Calculated Remaining: 231
+✗ Character is missing 231 free points
 
 Current Stat Sources:
-Vitality: 190 (base: 5 + class: 24 + profession: 60 + race: 24 + free_points: 77)
+Vitality: 190 (base: 5 + class: 24 + profession: 72 + race: 24 + free_points: 65)
 Endurance: 82 (base: 5 + class: 24 + race: 24 + free_points: 29)
-Strength: 242 (base: 5 + class: 144 + profession: 30 + race: 24 + free_points: 39)
-Dexterity: 221 (base: 5 + class: 168 + race: 24 + free_points: 24)
-Toughness: 190 (base: 5 + class: 72 + profession: 30 + race: 24 + free_points: 59)
+Strength: 242 (base: 5 + class: 144 + profession: 42 + race: 24 + free_points: 27)
+Dexterity: 257 (base: 5 + class: 168 + race: 84)
+Toughness: 197 (base: 5 + class: 72 + profession: 36 + race: 84)
 Intelligence: 29 (base: 5 + race: 24)
 Willpower: 37 (base: 5 + race: 24 + free_points: 8)
-Wisdom: 99 (base: 5 + class: 48 + race: 24 + free_points: 22)
-Perception: 111 (base: 5 + profession: 60 + race: 24 + free_points: 22)
+Wisdom: 137 (base: 5 + class: 48 + race: 84)
+Perception: 167 (base: 5 + profession: 78 + race: 84)
 
 --------------------------------------------------------------------------------
                           Detailed Validation for Fei
 --------------------------------------------------------------------------------
+Character Type: character
 Validation Type: reverse_engineered_manual
-Overall Summary: Reverse-engineered character has problems: 3 stat issues
+Overall Summary: Reverse-engineered character has problems: 6 stat issues
 
 Detailed Stat Allocation Analysis:
 Vitality: Base: 5 + Profession: +32 + Race: +24 + Free Points: +53 = 114
@@ -45,34 +51,78 @@ Endurance: Base: 5 + Race: +24 = 25
 ✗   ⚠ IMPOSSIBLE: endurance needs 4 more points than available!
 Strength: Base: 5 + Race: +24 = 17
 ✗   ⚠ IMPOSSIBLE: strength needs 12 more points than available!
-Dexterity: Base: 5 + Race: +24 + Free Points: +22 = 51
-Toughness: Base: 5 + Class: +48 + Race: +24 + Free Points: +12 = 89
+Dexterity: Base: 5 + Race: +80 = 51
+✗   ⚠ IMPOSSIBLE: dexterity needs 34 more points than available!
+Toughness: Base: 5 + Class: +48 + Race: +80 = 89
+✗   ⚠ IMPOSSIBLE: toughness needs 44 more points than available!
 Intelligence: Base: 5 + Class: +120 + Race: +24 = 142
 ✗   ⚠ IMPOSSIBLE: intelligence needs 7 more points than available!
 Willpower: Base: 5 + Class: +120 + Profession: +68 + Race: +24 + Free Points: +38 = 255
-Wisdom: Base: 5 + Class: +168 + Profession: +64 + Race: +24 + Free Points: +117 = 378
-Perception: Base: 5 + Class: +24 + Profession: +36 + Race: +24 + Free Points: +28 = 117
+Wisdom: Base: 5 + Class: +168 + Profession: +64 + Race: +80 + Free Points: +61 = 378
+Perception: Base: 5 + Class: +24 + Profession: +36 + Race: +80 = 117
+✗   ⚠ IMPOSSIBLE: perception needs 28 more points than available!
 
 Free Points Summary:
-Total Expected: 247
-Used in Allocation: 270
-Calculated Remaining: -23
-✗ Character has 23 excess free points
+Total Expected: 345
+Used in Allocation: 152
+Calculated Remaining: 193
+✗ Character is missing 193 free points
 
 Current Stat Sources:
 Vitality: 114 (base: 5 + profession: 32 + race: 24 + free_points: 53)
 Endurance: 29 (base: 5 + race: 24)
 Strength: 29 (base: 5 + race: 24)
-Dexterity: 51 (base: 5 + race: 24 + free_points: 22)
-Toughness: 89 (base: 5 + class: 48 + race: 24 + free_points: 12)
+Dexterity: 85 (base: 5 + race: 80)
+Toughness: 133 (base: 5 + class: 48 + race: 80)
 Intelligence: 149 (base: 5 + class: 120 + race: 24)
 Willpower: 255 (base: 5 + class: 120 + profession: 68 + race: 24 + free_points: 38)
-Wisdom: 378 (base: 5 + class: 168 + profession: 64 + race: 24 + free_points: 117)
-Perception: 117 (base: 5 + class: 24 + profession: 36 + race: 24 + free_points: 28)
+Wisdom: 378 (base: 5 + class: 168 + profession: 64 + race: 80 + free_points: 61)
+Perception: 145 (base: 5 + class: 24 + profession: 36 + race: 80)
+
+--------------------------------------------------------------------------------
+                         Detailed Validation for Zekiel
+--------------------------------------------------------------------------------
+Character Type: familiar
+Validation Type: race_leveling
+Overall Summary: Familiar has problems: 69 excess free points
+
+Race-Leveling Character Validation Details:
+Race: monster
+Race Level: 30
+
+Detailed Stat Allocation Analysis:
+Vitality: Base: 5 + Free Points: +203 = 208
+Endurance: Base: 5 + Free Points: +203 = 208
+Strength: Base: 5 + Free Points: +203 = 208
+Dexterity: Base: 5 + Free Points: +303 = 308
+Toughness: Base: 5 + Free Points: +189 = 194
+Intelligence: Base: 5 + Free Points: +53 = 58
+Willpower: Base: 5 + Free Points: +53 = 58
+Wisdom: Base: 5 + Free Points: +53 = 58
+Perception: Base: 5 + Free Points: +195 = 200
+
+Free Points Analysis:
+Expected from race levels: 1386
+Used in stat allocation: 1455
+Remaining: 0
+Balance: 1386 - 1455 - 0 = -69
+✗ ⚠ EXCESS: Familiar has 69 excess free points
+
+Current Stat Sources:
+Vitality: 208 (base: 5 + free_points: 203)
+Endurance: 208 (base: 5 + free_points: 203)
+Strength: 208 (base: 5 + free_points: 203)
+Dexterity: 308 (base: 5 + free_points: 303)
+Toughness: 194 (base: 5 + free_points: 189)
+Intelligence: 58 (base: 5 + free_points: 53)
+Willpower: 58 (base: 5 + free_points: 53)
+Wisdom: 58 (base: 5 + free_points: 53)
+Perception: 200 (base: 5 + free_points: 195)
 
 --------------------------------------------------------------------------------
                       Detailed Validation for Amina Wright
 --------------------------------------------------------------------------------
+Character Type: character
 Validation Type: reverse_engineered_manual
 Overall Summary: Reverse-engineered character follows progression rules correctly
 
@@ -88,10 +138,10 @@ Wisdom: Base: 5 + Class: +90 + Profession: +88 + Race: +54 + Free Points: +78 = 
 Perception: Base: 5 + Class: +24 + Profession: +40 + Race: +54 + Free Points: +11 = 134
 
 Free Points Summary:
-Total Expected: 314
+Total Expected: 330
 Used in Allocation: 339
-Calculated Remaining: -25
-✗ Character has 25 excess free points
+Calculated Remaining: -9
+✗ Character has 9 excess free points
 
 Current Stat Sources:
 Vitality: 166 (base: 5 + class: 44 + profession: 48 + race: 54 + free_points: 15)
@@ -105,42 +155,9 @@ Wisdom: 315 (base: 5 + class: 90 + profession: 88 + race: 54 + free_points: 78)
 Perception: 134 (base: 5 + class: 24 + profession: 40 + race: 54 + free_points: 11)
 
 --------------------------------------------------------------------------------
-                       Detailed Validation for Valentine
---------------------------------------------------------------------------------
-Validation Type: reverse_engineered_manual
-Overall Summary: Reverse-engineered character follows progression rules correctly
-
-Detailed Stat Allocation Analysis:
-Vitality: Base: 5 + Class: +78 + Race: +52 + Free Points: +67 = 202
-Endurance: Base: 5 + Race: +52 = 57
-Strength: Base: 5 + Race: +52 = 57
-Dexterity: Base: 5 + Race: +52 = 57
-Toughness: Base: 5 + Class: +52 + Race: +52 + Free Points: +16 = 125
-Intelligence: Base: 5 + Class: +178 + Profession: +30 + Race: +52 + Free Points: +95 = 360
-Willpower: Base: 5 + Class: +152 + Profession: +33 + Race: +52 + Free Points: +49 = 291
-Wisdom: Base: 5 + Class: +24 + Profession: +63 + Race: +52 + Free Points: +35 = 179
-Perception: Base: 5 + Class: +24 + Profession: +60 + Race: +52 + Free Points: +59 = 200
-
-Free Points Summary:
-Total Expected: 315
-Used in Allocation: 321
-Calculated Remaining: -6
-✗ Character has 6 excess free points
-
-Current Stat Sources:
-Vitality: 202 (base: 5 + class: 78 + race: 52 + free_points: 67)
-Endurance: 57 (base: 5 + race: 52)
-Strength: 57 (base: 5 + race: 52)
-Dexterity: 57 (base: 5 + race: 52)
-Toughness: 125 (base: 5 + class: 52 + race: 52 + free_points: 16)
-Intelligence: 360 (base: 5 + class: 178 + profession: 30 + race: 52 + free_points: 95)
-Willpower: 291 (base: 5 + class: 152 + profession: 33 + race: 52 + free_points: 49)
-Wisdom: 179 (base: 5 + class: 24 + profession: 63 + race: 52 + free_points: 35)
-Perception: 200 (base: 5 + class: 24 + profession: 60 + race: 52 + free_points: 59)
-
---------------------------------------------------------------------------------
                          Detailed Validation for Bruce
 --------------------------------------------------------------------------------
+Character Type: character
 Validation Type: reverse_engineered_manual
 Overall Summary: Reverse-engineered character follows progression rules correctly
 
@@ -173,8 +190,79 @@ Wisdom: 53 (base: 5 + race: 48)
 Perception: 101 (base: 5 + profession: 48 + race: 48)
 
 --------------------------------------------------------------------------------
+                         Detailed Validation for Woody
+--------------------------------------------------------------------------------
+Character Type: character
+Validation Type: reverse_engineered_manual
+Overall Summary: Reverse-engineered character follows progression rules correctly
+
+Detailed Stat Allocation Analysis:
+Vitality: Base: 5 + Class: +24 + Race: +52 + Free Points: +5 = 86
+Endurance: Base: 5 + Class: +75 + Race: +52 + Free Points: +5 = 137
+Strength: Base: 5 + Class: +34 + Race: +52 + Free Points: +19 = 110
+Dexterity: Base: 5 + Class: +116 + Profession: +103 + Race: +52 + Free Points: +103 = 379
+Toughness: Base: 5 + Race: +52 + Free Points: +5 = 62
+Intelligence: Base: 5 + Race: +52 = 57
+Willpower: Base: 5 + Profession: +57 + Race: +52 + Free Points: +66 = 180
+Wisdom: Base: 5 + Profession: +46 + Race: +52 + Free Points: +32 = 135
+Perception: Base: 5 + Class: +133 + Profession: +92 + Race: +52 + Free Points: +194 = 476
+
+Free Points Summary:
+Total Expected: 317
+Used in Allocation: 429
+Calculated Remaining: -112
+✗ Character has 112 excess free points
+
+Current Stat Sources:
+Vitality: 86 (base: 5 + class: 24 + race: 52 + free_points: 5)
+Endurance: 137 (base: 5 + class: 75 + race: 52 + free_points: 5)
+Strength: 110 (base: 5 + class: 34 + race: 52 + free_points: 19)
+Dexterity: 379 (base: 5 + class: 116 + profession: 103 + race: 52 + free_points: 103)
+Toughness: 62 (base: 5 + race: 52 + free_points: 5)
+Intelligence: 57 (base: 5 + race: 52)
+Willpower: 180 (base: 5 + profession: 57 + race: 52 + free_points: 66)
+Wisdom: 135 (base: 5 + profession: 46 + race: 52 + free_points: 32)
+Perception: 476 (base: 5 + class: 133 + profession: 92 + race: 52 + free_points: 194)
+
+--------------------------------------------------------------------------------
+                          Detailed Validation for Mary
+--------------------------------------------------------------------------------
+Character Type: character
+Validation Type: reverse_engineered_manual
+Overall Summary: Reverse-engineered character follows progression rules correctly
+
+Detailed Stat Allocation Analysis:
+Vitality: Base: 5 + Class: +216 + Race: +56 + Free Points: +225 = 502
+Endurance: Base: 5 + Race: +56 + Free Points: +83 = 144
+Strength: Base: 5 + Race: +56 = 61
+Dexterity: Base: 5 + Race: +56 = 61
+Toughness: Base: 5 + Race: +56 + Free Points: +40 = 101
+Intelligence: Base: 5 + Class: +24 + Race: +56 = 85
+Willpower: Base: 5 + Class: +264 + Race: +56 + Free Points: +232 = 557
+Wisdom: Base: 5 + Class: +264 + Race: +56 + Free Points: +235 = 560
+Perception: Base: 5 + Class: +24 + Race: +56 + Free Points: +16 = 101
+
+Free Points Summary:
+Total Expected: 471
+Used in Allocation: 831
+Calculated Remaining: -360
+✗ Character has 360 excess free points
+
+Current Stat Sources:
+Vitality: 502 (base: 5 + class: 216 + race: 56 + free_points: 225)
+Endurance: 144 (base: 5 + race: 56 + free_points: 83)
+Strength: 61 (base: 5 + race: 56)
+Dexterity: 61 (base: 5 + race: 56)
+Toughness: 101 (base: 5 + race: 56 + free_points: 40)
+Intelligence: 85 (base: 5 + class: 24 + race: 56)
+Willpower: 557 (base: 5 + class: 264 + race: 56 + free_points: 232)
+Wisdom: 560 (base: 5 + class: 264 + race: 56 + free_points: 235)
+Perception: 101 (base: 5 + class: 24 + race: 56 + free_points: 16)
+
+--------------------------------------------------------------------------------
                      Detailed Validation for Khalid Holman
 --------------------------------------------------------------------------------
+Character Type: character
 Validation Type: reverse_engineered_manual
 Overall Summary: Reverse-engineered character has problems: 1 stat issues
 
@@ -191,10 +279,10 @@ Wisdom: Base: 5 + Race: +48 = 53
 Perception: Base: 5 + Profession: +72 + Race: +48 + Free Points: +10 = 135
 
 Free Points Summary:
-Total Expected: 279
+Total Expected: 291
 Used in Allocation: 320
-Calculated Remaining: -41
-✗ Character has 41 excess free points
+Calculated Remaining: -29
+✗ Character has 29 excess free points
 
 Current Stat Sources:
 Vitality: 260 (base: 5 + class: 78 + profession: 42 + race: 48 + free_points: 87)
@@ -208,42 +296,9 @@ Wisdom: 53 (base: 5 + race: 48)
 Perception: 135 (base: 5 + profession: 72 + race: 48 + free_points: 10)
 
 --------------------------------------------------------------------------------
-                         Detailed Validation for Woody
---------------------------------------------------------------------------------
-Validation Type: reverse_engineered_manual
-Overall Summary: Reverse-engineered character follows progression rules correctly
-
-Detailed Stat Allocation Analysis:
-Vitality: Base: 5 + Class: +24 + Race: +52 + Free Points: +5 = 86
-Endurance: Base: 5 + Class: +75 + Race: +52 + Free Points: +5 = 137
-Strength: Base: 5 + Class: +34 + Race: +52 + Free Points: +19 = 110
-Dexterity: Base: 5 + Class: +116 + Profession: +103 + Race: +52 + Free Points: +103 = 379
-Toughness: Base: 5 + Race: +52 + Free Points: +5 = 62
-Intelligence: Base: 5 + Race: +52 = 57
-Willpower: Base: 5 + Profession: +57 + Race: +52 + Free Points: +66 = 180
-Wisdom: Base: 5 + Profession: +46 + Race: +52 + Free Points: +32 = 135
-Perception: Base: 5 + Class: +133 + Profession: +92 + Race: +52 + Free Points: +194 = 476
-
-Free Points Summary:
-Total Expected: 295
-Used in Allocation: 429
-Calculated Remaining: -134
-Character's Remaining: -134
-
-Current Stat Sources:
-Vitality: 86 (base: 5 + class: 24 + race: 52 + free_points: 5)
-Endurance: 137 (base: 5 + class: 75 + race: 52 + free_points: 5)
-Strength: 110 (base: 5 + class: 34 + race: 52 + free_points: 19)
-Dexterity: 379 (base: 5 + class: 116 + profession: 103 + race: 52 + free_points: 103)
-Toughness: 62 (base: 5 + race: 52 + free_points: 5)
-Intelligence: 57 (base: 5 + race: 52)
-Willpower: 180 (base: 5 + profession: 57 + race: 52 + free_points: 66)
-Wisdom: 135 (base: 5 + profession: 46 + race: 52 + free_points: 32)
-Perception: 476 (base: 5 + class: 133 + profession: 92 + race: 52 + free_points: 194)
-
---------------------------------------------------------------------------------
                          Detailed Validation for George
 --------------------------------------------------------------------------------
+Character Type: character
 Validation Type: reverse_engineered_manual
 Overall Summary: Reverse-engineered character follows progression rules correctly
 
@@ -275,3 +330,29 @@ Willpower: 186 (base: 5 + profession: 102 + race: 76 + free_points: 3)
 Wisdom: 177 (base: 5 + profession: 76 + race: 76 + free_points: 20)
 Perception: 94 (base: 5 + race: 76 + free_points: 13)
 
+--------------------------------------------------------------------------------
+                         Detailed Validation for Zekiel
+--------------------------------------------------------------------------------
+Character Type: familiar
+Validation Type: race_leveling
+Overall Summary: Familiar has problems: free points mismatch
+
+Race-Leveling Character Validation Details:
+Race: monster
+Race Level: 30
+
+Free Points Analysis:
+Expected from race levels: 1386
+Used in stat allocation: 1455
+Remaining: 0
+
+Current Stat Sources:
+Vitality: 208 (base: 5 + free_points: 203)
+Endurance: 208 (base: 5 + free_points: 203)
+Strength: 208 (base: 5 + free_points: 203)
+Dexterity: 308 (base: 5 + free_points: 303)
+Toughness: 194 (base: 5 + free_points: 189)
+Intelligence: 58 (base: 5 + free_points: 53)
+Willpower: 58 (base: 5 + free_points: 53)
+Wisdom: 58 (base: 5 + free_points: 53)
+Perception: 200 (base: 5 + free_points: 195)

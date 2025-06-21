@@ -623,6 +623,18 @@ races = {
                 },
                 "rank": "F",
             },
+            {
+                "min_level": 25,
+                "max_level": 99,
+                "stats": {
+                    "dexterity": 4,
+                    "toughness": 4,
+                    "wisdom": 4,
+                    "perception": 4,
+                    "free_points": 7,
+                },
+                "rank": "E",
+            },
         ]
     },
     "asrai": {
@@ -638,6 +650,18 @@ races = {
                     "vitality": 2,
                 },
                 "rank": "F",
+            },
+            {
+                "min_level": 24,
+                "max_level": 99,
+                "stats": {
+                    "dexterity": 5,
+                    "toughness": 4,
+                    "wisdom": 4,
+                    "perception": 4,
+                    "vitality": 4,
+                },
+                "rank": "E",
             }
         ]
     },
