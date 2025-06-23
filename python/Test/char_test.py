@@ -1416,10 +1416,16 @@ def view_character(character: Character):
     print_subheader("Health")
     print(f"Current Health: {character.health_manager.current_health}/{character.health_manager.max_health}")
     
-    # Free points
-    if character.level_system.free_points > 0:
-        print_subheader("Free Points")
-        print(f"Available: {character.level_system.free_points}")
+    # FIXED: Always show free points, regardless of value
+    print_subheader("Free Points")
+    free_points = character.level_system.free_points
+    if free_points > 0:
+        print_colored(f"Available: {free_points}", 'green')
+    elif free_points == 0:
+        print_colored("Available: 0", 'yellow')
+    else:
+        print_colored(f"Balance: {free_points} (overspent)", 'red')
+        print_info("Negative free points indicate more points were allocated than earned from progression.")
     
     # Blessing
     if hasattr(character, 'blessing') and character.blessing:
@@ -1874,6 +1880,32 @@ def show_detailed_stat_breakdown(character: Character, validation_result: Dict[s
                 print_error(f"Free points discrepancy: {diff}")
     
     pause_screen()
+    
+def show_detailed_stat_breakdown_simple(character: Character):
+    """Show detailed breakdown of where each stat point came from."""
+    clear_screen()
+    print_header("Detailed Stat Source Breakdown")
+    
+    print_subheader("Free Points Usage Analysis")
+    total_free_points_used = 0
+    
+    for stat in STATS:
+        sources = character.data_manager.get_stat_sources(stat)
+        free_points_used = sources.get("free_points", 0)
+        
+        if free_points_used > 0:
+            total_free_points_used += free_points_used
+            print(f"{stat.capitalize()}: {free_points_used} free points allocated")
+    
+    if total_free_points_used == 0:
+        print_info("No free points have been allocated to any stats.")
+    else:
+        print(f"\nTotal free points allocated: {total_free_points_used}")
+        print(f"Current free point balance: {character.level_system.free_points}")
+        expected_balance = total_free_points_used + character.level_system.free_points
+        print(f"Expected total from progression: {expected_balance}")
+    
+    pause_screen()
 
 def update_stats(character: Character):
     """Update character stats."""
@@ -2202,14 +2234,14 @@ def level_up_character(character: Character):
 
 def bulk_level_characters(item_repository):
     """
-    Bulk level multiple characters from a CSV file with level type and target level.
-    UPDATED: Added support for race level ups
+    Bulk level multiple characters from a CSV file with level type and levels gained.
+    UPDATED: Changed from target level to levels gained, updated column names
     """
     clear_screen()
     print_header("Bulk Level Characters")
     
     # Get the CSV file with character leveling data
-    leveling_file = input("Enter the CSV filename containing character target levels: ").strip()
+    leveling_file = input("Enter the CSV filename containing character level gains: ").strip()
     if not leveling_file.endswith('.csv'):
         leveling_file += '.csv'
     
@@ -2253,27 +2285,63 @@ def bulk_level_characters(item_repository):
             
             # Check if first line looks like headers
             first_line = sample.split('\n')[0] if sample else ""
-            has_header = any(keyword in first_line.lower() for keyword in ['name', 'level', 'type', 'target'])
+            has_header = any(keyword in first_line.lower() for keyword in ['character name', 'level type', 'levels gained', 'name', 'level', 'gain'])
             
             reader = csv.reader(file)
             
             if has_header:
                 headers = next(reader)  # Skip header and store for reference
                 print_info(f"Detected headers: {', '.join(headers)}")
+                
+                # Try to map headers to expected column positions
+                header_map = {}
+                for i, header in enumerate(headers):
+                    header_lower = header.lower().strip()
+                    if 'character name' in header_lower or header_lower == 'name':
+                        header_map['name'] = i
+                    elif 'level type' in header_lower or header_lower == 'type':
+                        header_map['level_type'] = i
+                    elif 'levels gained' in header_lower or 'gain' in header_lower:
+                        header_map['levels_gained'] = i
+                
+                # Check if we found all required columns
+                missing_columns = []
+                if 'name' not in header_map:
+                    missing_columns.append('Character Name')
+                if 'level_type' not in header_map:
+                    missing_columns.append('Level Type')
+                if 'levels_gained' not in header_map:
+                    missing_columns.append('Levels Gained')
+                
+                if missing_columns:
+                    print_error(f"Missing required columns: {', '.join(missing_columns)}")
+                    print_info("Expected columns: 'Character Name', 'Level Type', 'Levels Gained'")
+                    print_info(f"Found columns: {', '.join(headers)}")
+                    pause_screen()
+                    return
+            else:
+                # No headers detected, assume columns are in order: name, level_type, levels_gained
+                header_map = {'name': 0, 'level_type': 1, 'levels_gained': 2}
+                print_info("No headers detected, assuming column order: Character Name, Level Type, Levels Gained")
             
             for row_num, row in enumerate(reader, start=2 if has_header else 1):
                 if len(row) < 3:
                     print_warning(f"Skipping row {row_num}: insufficient columns (need 3, got {len(row)})")
                     continue
                 
-                if not all(cell.strip() for cell in row[:3]):  # Check first 3 columns aren't empty
+                try:
+                    name = row[header_map['name']].strip()
+                    level_type = row[header_map['level_type']].strip()
+                    levels_gained_str = row[header_map['levels_gained']].strip()
+                except IndexError:
+                    print_warning(f"Skipping row {row_num}: column index error")
+                    continue
+                
+                if not all([name, level_type, levels_gained_str]):
                     print_warning(f"Skipping row {row_num}: empty required fields")
                     continue
                 
-                name = row[0].strip()
-                level_type = row[1].strip()
-                
-                # NEW: Validate level type and normalize case (now includes Race)
+                # NEW: Validate level type and normalize case (includes Race)
                 if level_type.lower() not in ["class", "profession", "race"]:
                     print_error(f"Row {row_num}: Invalid level type '{level_type}'. Must be 'Class', 'Profession', or 'Race'.")
                     continue
@@ -2281,20 +2349,20 @@ def bulk_level_characters(item_repository):
                 # Normalize case to match META_INFO constants
                 level_type = level_type.lower().capitalize()  # "class" -> "Class", "profession" -> "Profession", "race" -> "Race"
                 
-                # Validate target level
+                # NEW: Validate levels gained (must be positive integer)
                 try:
-                    target_level = int(row[2].strip())
-                    if target_level <= 0:
-                        print_error(f"Row {row_num}: Target level must be positive, got {target_level}")
+                    levels_gained = int(levels_gained_str)
+                    if levels_gained <= 0:
+                        print_error(f"Row {row_num}: Levels gained must be positive, got {levels_gained}")
                         continue
                 except ValueError:
-                    print_error(f"Row {row_num}: Invalid target level '{row[2]}'. Must be a positive integer.")
+                    print_error(f"Row {row_num}: Invalid levels gained '{levels_gained_str}'. Must be a positive integer.")
                     continue
                 
                 leveling_data.append({
                     'name': name,
                     'level_type': level_type,
-                    'target_level': target_level,
+                    'levels_gained': levels_gained,
                     'row_num': row_num
                 })
     
@@ -2310,7 +2378,7 @@ def bulk_level_characters(item_repository):
     
     print_success(f"Found {len(leveling_data)} valid leveling operations:")
     for data in leveling_data:
-        print(f"  - {data['name']}: {data['level_type']} level to {data['target_level']}")
+        print(f"  - {data['name']}: {data['level_type']} +{data['levels_gained']} levels")
     
     if not confirm_action(f"Process {len(leveling_data)} leveling operations?"):
         return
@@ -2319,15 +2387,16 @@ def bulk_level_characters(item_repository):
     processed = 0
     errors = 0
     skipped = 0
+    processed_characters = []  # Store successfully processed characters
     
     for i, data in enumerate(leveling_data, 1):
         name = data['name']
         level_type = data['level_type']
-        target_level = data['target_level']
+        levels_gained = data['levels_gained']
         
         clear_screen()
         print_header(f"Processing {i}/{len(leveling_data)}: {name}")
-        print_info(f"Operation: {level_type} level to {target_level}")
+        print_info(f"Operation: {level_type} +{levels_gained} levels")
         
         # Load the character
         try:
@@ -2356,125 +2425,136 @@ def bulk_level_characters(item_repository):
                     skipped += 1
                     continue
             
-            # Check current level
+            # Get current level and calculate target level
             current_level = int(character.data_manager.get_meta(f"{level_type} level", "0"))
-            
-            if target_level <= current_level:
-                print_warning(f"{name} is already at or above {level_type} level {target_level} (current: {current_level}).")
-                skipped += 1
-                # No pause for skipped characters - just continue
-                continue
+            target_level = current_level + levels_gained
             
             print_info(f"Current {level_type} level: {current_level}")
+            print_info(f"Levels to gain: +{levels_gained}")
             print_info(f"Target {level_type} level: {target_level}")
             
-            # Check for tier changes using existing logic from level_up_character() (only for class/profession)
+            # Check for ALL tier changes that will be crossed (only for class/profession)
             needs_pause = False  # Track if user interaction occurred
             
             if level_type.lower() in ["class", "profession"]:
-                next_threshold = character.data_manager.get_next_tier_threshold(current_level)
+                # Find ALL tier thresholds that will be crossed
+                thresholds_to_cross = []
+                for threshold in character.data_manager.tier_thresholds:
+                    if current_level < threshold <= target_level:
+                        thresholds_to_cross.append(threshold)
                 
-                if next_threshold and current_level < next_threshold <= target_level:
-                    needs_pause = True  # Tier change requires user input
-                    current_tier = get_tier_for_level(current_level, character.data_manager.tier_thresholds)
-                    next_tier = current_tier + 1
+                thresholds_to_cross.sort()  # Process in order
+                
+                if thresholds_to_cross:
+                    needs_pause = True  # Tier changes require user input
                     
-                    print_subheader(f"Tier Change Required for {name}")
-                    print_warning(f"Character will advance to tier {next_tier} at level {next_threshold}!")
+                    print_subheader(f"Multiple Tier Changes Required for {name}")
+                    print_warning(f"Character will cross {len(thresholds_to_cross)} tier threshold(s): {thresholds_to_cross}")
                     
-                    if level_type.lower() == "class":
-                        # Get available classes for the next tier
-                        available_classes = get_available_classes_for_tier(next_tier)
+                    # Process each tier crossing
+                    for threshold in thresholds_to_cross:
+                        tier_at_threshold = get_tier_for_level(threshold, character.data_manager.tier_thresholds)
                         
-                        if not available_classes:
-                            print_error(f"No tier {next_tier} classes available!")
-                            errors += 1
-                            pause_screen()
-                            continue
+                        print_subheader(f"Tier Change at Level {threshold}")
+                        print_info(f"Advancing to tier {tier_at_threshold}")
                         
-                        # Display options
-                        print_subheader(f"Available Tier {next_tier} Classes")
-                        for j, class_name in enumerate(available_classes, 1):
-                            print(f"{j}. {class_name}")
-                        
-                        # Get selection
-                        while True:
-                            selection = input(f"\nEnter new tier {next_tier} class for {name} (number or name): ").strip()
+                        if level_type.lower() == "class":
+                            # Get available classes for this tier
+                            available_classes = get_available_classes_for_tier(tier_at_threshold)
                             
-                            # Try to parse as number first
-                            try:
-                                choice_num = int(selection)
-                                if 1 <= choice_num <= len(available_classes):
-                                    new_class = available_classes[choice_num - 1]
-                                    break
-                                else:
-                                    print_error(f"Please enter a number between 1 and {len(available_classes)}")
-                                    continue
-                            except ValueError:
-                                # Try to match by name
-                                new_class = selection.lower()
-                                if validate_class_tier_combination(new_class, next_tier):
-                                    break
-                                else:
-                                    print_error(f"Invalid tier {next_tier} class: {selection}")
-                                    continue
-                        
-                        # Change class before leveling up
-                        success = character.change_class(new_class, next_threshold)
-                        if not success:
-                            print_error("Failed to change class.")
-                            errors += 1
-                            pause_screen()
-                            continue
+                            if not available_classes:
+                                print_error(f"No tier {tier_at_threshold} classes available!")
+                                errors += 1
+                                pause_screen()
+                                continue
                             
-                        print_success(f"Class changed to {new_class} at level {next_threshold}")
+                            # Display options
+                            print(f"Available Tier {tier_at_threshold} Classes:")
+                            for j, class_name in enumerate(available_classes, 1):
+                                print(f"  {j}. {class_name}")
+                            
+                            # Get selection
+                            while True:
+                                selection = input(f"\nEnter new tier {tier_at_threshold} class for {name} at level {threshold} (number or name): ").strip()
+                                
+                                # Try to parse as number first
+                                try:
+                                    choice_num = int(selection)
+                                    if 1 <= choice_num <= len(available_classes):
+                                        new_class = available_classes[choice_num - 1]
+                                        break
+                                    else:
+                                        print_error(f"Please enter a number between 1 and {len(available_classes)}")
+                                        continue
+                                except ValueError:
+                                    # Try to match by name
+                                    new_class = selection.lower()
+                                    if validate_class_tier_combination(new_class, tier_at_threshold):
+                                        break
+                                    else:
+                                        print_error(f"Invalid tier {tier_at_threshold} class: {selection}")
+                                        continue
+                            
+                            # Change class at this threshold
+                            success = character.change_class(new_class, threshold)
+                            if not success:
+                                print_error(f"Failed to change class at level {threshold}.")
+                                errors += 1
+                                pause_screen()
+                                break  # Exit the threshold loop
+                                
+                            print_success(f"Class will change to {new_class} at level {threshold}")
+                        
+                        elif level_type.lower() == "profession":
+                            # Get available professions for this tier
+                            available_professions = get_available_professions_for_tier(tier_at_threshold)
+                            
+                            if not available_professions:
+                                print_error(f"No tier {tier_at_threshold} professions available!")
+                                errors += 1
+                                pause_screen()
+                                continue
+                            
+                            # Display options
+                            print(f"Available Tier {tier_at_threshold} Professions:")
+                            for j, profession_name in enumerate(available_professions, 1):
+                                print(f"  {j}. {profession_name}")
+                            
+                            # Get selection
+                            while True:
+                                selection = input(f"\nEnter new tier {tier_at_threshold} profession for {name} at level {threshold} (number or name): ").strip()
+                                
+                                # Try to parse as number first
+                                try:
+                                    choice_num = int(selection)
+                                    if 1 <= choice_num <= len(available_professions):
+                                        new_profession = available_professions[choice_num - 1]
+                                        break
+                                    else:
+                                        print_error(f"Please enter a number between 1 and {len(available_professions)}")
+                                        continue
+                                except ValueError:
+                                    # Try to match by name
+                                    new_profession = selection.lower()
+                                    if validate_profession_tier_combination(new_profession, tier_at_threshold):
+                                        break
+                                    else:
+                                        print_error(f"Invalid tier {tier_at_threshold} profession: {selection}")
+                                        continue
+                            
+                            # Change profession at this threshold
+                            success = character.change_profession(new_profession, threshold)
+                            if not success:
+                                print_error(f"Failed to change profession at level {threshold}.")
+                                errors += 1
+                                pause_screen()
+                                break  # Exit the threshold loop
+                                
+                            print_success(f"Profession will change to {new_profession} at level {threshold}")
                     
-                    elif level_type.lower() == "profession":
-                        # Get available professions for the next tier
-                        available_professions = get_available_professions_for_tier(next_tier)
-                        
-                        if not available_professions:
-                            print_error(f"No tier {next_tier} professions available!")
-                            errors += 1
-                            pause_screen()
-                            continue
-                        
-                        # Display options
-                        print_subheader(f"Available Tier {next_tier} Professions")
-                        for j, profession_name in enumerate(available_professions, 1):
-                            print(f"{j}. {profession_name}")
-                        
-                        # Get selection
-                        while True:
-                            selection = input(f"\nEnter new tier {next_tier} profession for {name} (number or name): ").strip()
-                            
-                            # Try to parse as number first
-                            try:
-                                choice_num = int(selection)
-                                if 1 <= choice_num <= len(available_professions):
-                                    new_profession = available_professions[choice_num - 1]
-                                    break
-                                else:
-                                    print_error(f"Please enter a number between 1 and {len(available_professions)}")
-                                    continue
-                            except ValueError:
-                                # Try to match by name
-                                new_profession = selection.lower()
-                                if validate_profession_tier_combination(new_profession, next_tier):
-                                    break
-                                else:
-                                    print_error(f"Invalid tier {next_tier} profession: {selection}")
-                                    continue
-                        
-                        # Change profession before leveling up
-                        success = character.change_profession(new_profession, next_threshold)
-                        if not success:
-                            print_error("Failed to change profession.")
-                            errors += 1
-                            pause_screen()
-                            continue
-                            
-                        print_success(f"Profession changed to {new_profession} at level {next_threshold}")
+                    # If we hit an error during tier changes, continue to next character
+                    if errors > (processed + skipped):  # Error count increased
+                        continue
             
             # Now proceed with level up (no loading screen)
             success = character.level_up(level_type, target_level)
@@ -2485,7 +2565,7 @@ def bulk_level_characters(item_repository):
                 pause_screen()  # Pause for errors
                 continue
             
-            print_success(f"Leveled up {name} to {level_type} level {target_level}")
+            print_success(f"Leveled up {name} to {level_type} level {target_level} (+{levels_gained} levels)")
             
             # Handle free points allocation
             if character.level_system.free_points > 0:
@@ -2519,15 +2599,9 @@ def bulk_level_characters(item_repository):
                 # allocation_method == '3': save for later (do nothing)
                 # needs_pause remains True to let user see the message
             
-            # Save the character
-            save_success = character.save(character_file)
-            if save_success:
-                print_success(f"Saved {name} to {character_file}")
-                processed += 1
-            else:
-                print_error(f"Failed to save {name}")
-                errors += 1
-                needs_pause = True  # Pause for save errors
+            # Store processed character for batch saving later
+            processed_characters.append(character)
+            processed += 1
         
         except Exception as e:
             print_error(f"Error processing {name}: {str(e)}")
@@ -2538,17 +2612,99 @@ def bulk_level_characters(item_repository):
         if needs_pause and i < len(leveling_data):
             pause_screen()
     
+    # Save all processed characters
+    if processed_characters:
+        clear_screen()
+        print_header("Save Leveled Characters")
+        print_success(f"Successfully processed {len(processed_characters)} characters:")
+        for char in processed_characters:
+            print(f"  - {char.name}")
+        
+        print_subheader("Save Destination")
+        print("1. Save to original file (overwrites existing data)")
+        print("2. Save to a new file (preserves original data)")
+        print("3. Don't save (discard changes)")
+        
+        while True:
+            save_choice = input("Choose save option (1-3): ").strip()
+            if save_choice in ['1', '2', '3']:
+                break
+            print_error("Please enter 1, 2, or 3")
+        
+        if save_choice == '1':
+            # Save to original file
+            print_warning(f"This will overwrite the original file: {character_file}")
+            if confirm_action("Are you sure you want to overwrite the original file?"):
+                save_file = character_file
+                save_mode = "w"  # Overwrite mode
+            else:
+                print_info("Save cancelled.")
+                pause_screen()
+                return
+        
+        elif save_choice == '2':
+            # Save to new file
+            while True:
+                new_filename = input("Enter new filename (without .csv extension): ").strip()
+                if new_filename:
+                    if not new_filename.endswith('.csv'):
+                        new_filename += '.csv'
+                    
+                    if os.path.exists(new_filename):
+                        print_warning(f"File {new_filename} already exists.")
+                        if not confirm_action("Overwrite existing file?"):
+                            continue
+                    
+                    save_file = new_filename
+                    save_mode = "w"  # New file mode
+                    break
+                else:
+                    print_error("Filename cannot be empty.")
+        
+        else:  # save_choice == '3'
+            print_info("Changes discarded. Original file unchanged.")
+            pause_screen()
+            return
+        
+        # Perform the actual saving
+        print_loading("Saving characters")
+        saved_count = 0
+        save_errors = 0
+        
+        for i, character in enumerate(processed_characters):
+            try:
+                # Use 'w' mode for first character, 'a' for subsequent ones
+                mode = save_mode if i == 0 else "a"
+                success = character.save(save_file, mode=mode)
+                
+                if success:
+                    saved_count += 1
+                else:
+                    print_error(f"Failed to save {character.name}")
+                    save_errors += 1
+            except Exception as e:
+                print_error(f"Error saving {character.name}: {str(e)}")
+                save_errors += 1
+        
+        if saved_count == len(processed_characters):
+            print_success(f"All {saved_count} characters saved successfully to {save_file}")
+        elif saved_count > 0:
+            print_warning(f"Saved {saved_count}/{len(processed_characters)} characters to {save_file}")
+            print_error(f"{save_errors} characters failed to save")
+        else:
+            print_error(f"Failed to save any characters to {save_file}")
+    
     # Summary
     clear_screen()
     print_header("Bulk Leveling Complete")
     print_success(f"Successfully processed: {processed} operations")
     if skipped > 0:
-        print_info(f"Skipped (already at target level or type mismatch): {skipped} operations")
+        print_info(f"Skipped (character type mismatch): {skipped} operations")
     if errors > 0:
         print_error(f"Errors encountered: {errors} operations")
     
     pause_screen()
-
+    
 def allocate_points(character: Character):
     """Allocate free points to character stats."""
     clear_screen()
@@ -2557,19 +2713,49 @@ def allocate_points(character: Character):
     
     free_points = character.level_system.free_points
     
-    if free_points == 0:
-        print_error("No free points available to allocate.")
-        pause_screen()
+    # FIXED: Handle all free point scenarios, including negative
+    print_subheader("Free Points Status")
+    if free_points > 0:
+        print_colored(f"Available: {free_points} points", 'green')
+    elif free_points == 0:
+        print_colored("Available: 0 points", 'yellow')
+        print_info("No free points available to allocate.")
+        print_info("You can still view current stats or exit.")
+    else:
+        print_colored(f"Balance: {free_points} (overspent)", 'red')
+        print_warning("Character has negative free points - more points were allocated than earned.")
+        print_info("This often occurs with reverse-engineered characters.")
+        print_info("You can view stats but cannot allocate more points until balance is positive.")
+    
+    print_subheader("Current Stats")
+    for stat in STATS:
+        sources = character.data_manager.get_stat_sources(stat)
+        current = character.data_manager.get_stat(stat)
+        free_points_used = sources.get("free_points", 0)
+        
+        if free_points_used > 0:
+            print(f"{stat.capitalize()}: {current} (free points used: {free_points_used})")
+        else:
+            print(f"{stat.capitalize()}: {current}")
+    
+    # Show allocation options based on free point status
+    if free_points <= 0:
+        print_subheader("Options")
+        print("1. View detailed stat breakdown")
+        print("2. Remove allocated free points (experimental)")
+        print("0. Return to main menu")
+        
+        choice = input("\nEnter your choice: ").strip()
+        
+        if choice == '1':
+            show_detailed_stat_breakdown_simple(character)
+        elif choice == '2':
+            deallocate_free_points(character)
+        # choice == '0' or anything else returns to main menu
         return
     
-    print_info(f"You have {free_points} free points to allocate.")
-    print_subheader("Current Stats")
-    
-    for stat in STATS:
-        print(f"{stat.capitalize()}: {character.data_manager.get_stat(stat)}")
-    
-    # Ask how to allocate
-    print()
+    # Original allocation logic for positive free points
+    print_subheader("Allocation Options")
     allocation_choice = input("How do you want to allocate points? (manual/random/cancel): ").lower().strip()
     
     if allocation_choice == "cancel":
@@ -2644,6 +2830,142 @@ def allocate_points(character: Character):
     else:
         print_error("Invalid choice.")
     
+    pause_screen()
+    
+def deallocate_free_points(character: Character):
+    """
+    Experimental function to remove allocated free points.
+    Follows the same loop pattern as manual allocation.
+    Limits deallocation to only the overspent amount.
+    """
+    clear_screen()
+    print_header("Remove Allocated Free Points (Experimental)")
+    
+    print_warning("This feature allows you to remove free points that have been allocated to stats.")
+    print_warning("Use with caution - this can break character progression rules!")
+    print_info("This is mainly useful for fixing reverse-engineered characters with allocation errors.")
+    print_info("You can only deallocate up to the overspent amount (negative balance).")
+    
+    initial_free_points = character.level_system.free_points
+    if initial_free_points >= 0:
+        print_error("Character doesn't have negative free points. No deallocation needed.")
+        pause_screen()
+        return
+    
+    max_deallocatable = abs(initial_free_points)  # Total overspent amount
+    print_info(f"Maximum total deallocation allowed: {max_deallocatable} points")
+    
+    if not confirm_action("Do you want to start removing allocated free points?"):
+        return
+    
+    # Deallocation loop - similar to manual allocation loop
+    while character.level_system.free_points < 0:
+        clear_screen()
+        overspent_amount = abs(character.level_system.free_points)
+        print_header(f"Free Point Deallocation: {overspent_amount} points overspent")
+        
+        # Show current status
+        print_subheader("Current Status")
+        print_colored(f"Free point balance: {character.level_system.free_points} (overspent by {overspent_amount})", 'red')
+        print_colored(f"Remaining to deallocate: {overspent_amount} points", 'yellow')
+        
+        # Show current free point allocations
+        print_subheader("Current Free Point Allocations")
+        allocations = {}
+        total_allocated = 0
+        
+        for stat in STATS:
+            sources = character.data_manager.get_stat_sources(stat)
+            free_points_used = sources.get("free_points", 0)
+            if free_points_used > 0:
+                allocations[stat] = free_points_used
+                total_allocated += free_points_used
+                # Show how much can be deallocated from this stat
+                max_from_stat = min(free_points_used, overspent_amount)
+                print(f"{stat.capitalize()}: {free_points_used} points allocated (can remove up to {max_from_stat})")
+        
+        if not allocations:
+            print_error("No free points are allocated to stats, but balance is negative.")
+            print_error("This indicates a data inconsistency that cannot be fixed with deallocation.")
+            break
+        
+        print(f"\nTotal currently allocated: {total_allocated}")
+        
+        # Get user choice
+        print()
+        stat = input("Enter stat to remove points from (or 'done' to finish): ").lower().strip()
+        
+        if stat == "done":
+            remaining_overspent = abs(character.level_system.free_points)
+            if remaining_overspent > 0:
+                print_info(f"Deallocation stopped. {remaining_overspent} points still overspent.")
+            else:
+                print_success("All overspent points have been deallocated!")
+            break
+        
+        if stat not in STATS:
+            print_error(f"Invalid stat. Available stats: {', '.join(STATS)}")
+            pause_screen()
+            continue
+        
+        if stat not in allocations:
+            print_error(f"{stat.capitalize()} has no allocated free points to remove.")
+            pause_screen()
+            continue
+        
+        # Get amount to deallocate
+        current_allocation = allocations[stat]
+        max_removable = min(current_allocation, overspent_amount)
+        
+        try:
+            amount = int(input(f"How many points to remove from {stat}? (max: {max_removable}): "))
+            
+            if amount <= 0:
+                print_error("Please enter a positive number.")
+            elif amount > max_removable:
+                print_error(f"You can only remove up to {max_removable} points from {stat}.")
+                print_info(f"  - {stat.capitalize()} has {current_allocation} points allocated")
+                print_info(f"  - Only {overspent_amount} points are overspent")
+            else:
+                # Remove the points by subtracting from the stat and adding back to free points
+                character.data_manager.add_stat(stat, -amount, "free_points")
+                character.level_system.free_points += amount
+                
+                print_success(f"Removed {amount} free points from {stat}")
+                new_balance = character.level_system.free_points
+                
+                if new_balance >= 0:
+                    print_success(f"Free point balance is now: {new_balance} (no longer overspent!)")
+                else:
+                    remaining_overspent = abs(new_balance)
+                    print_info(f"Free point balance is now: {new_balance} ({remaining_overspent} still overspent)")
+        
+        except ValueError:
+            print_error("Please enter a valid number.")
+        
+        # Pause before next iteration (unless we've reached 0 or positive)
+        if character.level_system.free_points < 0:
+            pause_screen()
+    
+    # Final status
+    clear_screen()
+    print_header("Deallocation Complete")
+    
+    final_balance = character.level_system.free_points
+    points_deallocated = final_balance - initial_free_points
+    
+    print_subheader("Summary")
+    print(f"Starting balance: {initial_free_points}")
+    print(f"Final balance: {final_balance}")
+    print(f"Points deallocated: {points_deallocated}")
+    
+    if final_balance >= 0:
+        print_success("✓ Character no longer has overspent free points!")
+    else:
+        remaining_overspent = abs(final_balance)
+        print_warning(f"⚠ Character still has {remaining_overspent} overspent free points")
+    
+    print_info("Recommendation: Run character validation to check overall consistency.")
     pause_screen()
 
 def add_blessing(character: Character):

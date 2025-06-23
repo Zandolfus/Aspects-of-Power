@@ -1103,6 +1103,40 @@ class LevelSystem:
         self.free_points -= amount
         return True
     
+    def allocate_free_points_with_debt(self, stat: str, amount: int, allow_debt: bool = False) -> bool:
+        """
+        Allocate free points to a specific stat with optional debt allowance.
+        
+        Args:
+            stat: The stat to increase
+            amount: Number of points to allocate  
+            allow_debt: If True, allows going into negative free points
+            
+        Returns:
+            True if successful, False otherwise
+        """
+        if stat not in STATS:
+            print(f"Invalid stat: {stat}")
+            return False
+            
+        if amount <= 0:
+            print(f"Amount must be positive. Got: {amount}")
+            return False
+        
+        if not allow_debt and amount > self.free_points:
+            print(f"Not enough free points. Have: {self.free_points}, Need: {amount}")
+            print("Use allow_debt=True to allocate into negative balance")
+            return False
+        
+        # Apply the points
+        self.data_manager.add_stat(stat, amount, StatSource.FREE_POINTS)
+        self.free_points -= amount
+    
+        if self.free_points < 0:
+            print(f"Warning: Free point balance is now negative: {self.free_points}")
+        
+        return True
+    
     def allocate_random(self) -> None:
         """Randomly allocate all free points"""
         while self.free_points > 0:
@@ -2666,7 +2700,7 @@ class Character:
         for stat in STATS:
             if stat in stat_sources:
                 for source, value in stat_sources[stat].items():
-                    if source != StatSource.BASE and source != StatSource.RACE:
+                    if source in [StatSource.FREE_POINTS, StatSource.BLESSING, StatSource.ITEM]:
                         self.data_manager.add_stat(stat, value, source)
         
         # Recalculate race bonuses but don't touch free points
@@ -2674,6 +2708,9 @@ class Character:
         
         # Update health after all stats are applied
         self.health_manager.update_max_health()
+        
+        # Update free points
+        self.level_system.free_points = self.level_system.free_points - sum(stat_data['free_points'] for stat_data in stat_sources.values())
     
     def _update_finesse(self) -> None:
         """Update finesse setting based on class."""
@@ -2936,11 +2973,17 @@ class Character:
                 stats_str.append(f"{stat}: {sources.get(StatSource.BASE, 0)}{source_str} = {current} (modifier: {modifier})")
             else:
                 stats_str.append(f"{stat}: {current} (modifier: {modifier})")
-        
+
         stats_display = ", ".join(stats_str)
         
-        # Format free points info
-        free_points_str = f"\nFree points: {self.level_system.free_points}" if self.level_system.free_points > 0 else ""
+        # ENHANCED: Format free points info with status indication
+        free_points = self.level_system.free_points
+        if free_points > 0:
+            free_points_str = f"\nFree points: {free_points} available"
+        elif free_points == 0:
+            free_points_str = f"\nFree points: 0 (none available)"
+        else:
+            free_points_str = f"\nFree points: {free_points} (overspent - negative balance)"
         
         # Format blessing info
         blessing_str = ""
