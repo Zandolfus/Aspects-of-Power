@@ -236,6 +236,13 @@ class_gains = {
             "endurance": 2,
             "free_points": 4,
         },
+        "sandman": {
+            "dexterity": 5,
+            "willpower": 4,
+            "intelligence": 3,
+            "strength": 2,
+            "free_points": 4,
+        },
     },
 }
 
@@ -386,6 +393,9 @@ profession_gains = {
             "willpower": 1,
             "perception": 1,
             "free_points": 2,
+        },        
+        "demonic butler": {
+            "free_points": 8,
         },
     },
     2: {  # Tier 2
@@ -519,6 +529,9 @@ profession_gains = {
             "vitality": 3,
             "intelligence": 2,
             "free_points": 4,
+        },        
+        "head demonic butler": {
+            "free_points": 8,
         },
     },
 }
@@ -697,6 +710,37 @@ races = {
                     },
                 "rank": "E",
             },
+        ]
+    },
+    "demon": {
+        "rank_ranges": [
+            {
+                "min_level": 0,
+                "max_level": 24,
+                "stats": {
+                    "strength": 2,
+                    "dexterity": 2,
+                    "wisdom": 2,
+                    "intelligence": 2,
+                    "willpower": 2,
+                    "perception": 1,
+                },
+                "rank": "F",
+            },
+            {
+                "min_level": 24,
+                "max_level": 99,
+                "stats": {
+                    "strength": 3,
+                    "dexterity": 3,
+                    "wisdom": 3,
+                    "intelligence": 3,
+                    "willpower": 3,
+                    "perception": 3,
+                    "free_points": 5,
+                },
+                "rank": "E",
+            }
         ]
     },
 }
