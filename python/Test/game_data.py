@@ -243,6 +243,13 @@ class_gains = {
             "strength": 2,
             "free_points": 4,
         },
+        "pyroclast magus": {
+            "intelligence": 5,
+            "willpower": 4,
+            "vitality": 3,
+            "perception": 2,
+            "free_points": 4,
+        },
     },
 }
 
@@ -495,6 +502,12 @@ profession_gains = {
         "high justiciar": {
             "free_points": 18
         },
+        "high magistrate": {
+            "free_points": 18
+        },
+        "high advocate": {
+            "free_points": 18
+        },
         "mana-jeweler of the elements": {
             "willpower": 5,
             "wisdom": 4,
@@ -532,6 +545,13 @@ profession_gains = {
         },        
         "head demonic butler": {
             "free_points": 8,
+        },
+        "field smith of the moonshadow": {
+            "intelligence": 5,
+            "willpower": 4,
+            "perception": 3,
+            "strength": 2,
+            "free_points": 4,
         },
     },
 }

@@ -8,6 +8,7 @@ import sys
 import time
 import random
 import csv
+import datetime
 from typing import Optional, Dict, Any, Tuple
 from Character_Creator import (
     Character, ItemRepository, STATS, META_INFO, StatValidator, CHARACTER_TYPES, RACE_LEVELING_TYPES
@@ -1706,7 +1707,7 @@ def view_race_progression(character: Character):
     pause_screen()
 
 def validate_character_stats(character: Character):
-    """Enhanced validation display with automatic conversion and free point auto-correction."""
+    """Enhanced validation display with comprehensive details and file export option."""
     clear_screen()
     character_type = character.data_manager.get_meta("Character Type", "character")
     print_header(f"Character Validation: {character.name} ({character_type.capitalize()})")
@@ -1744,72 +1745,322 @@ def validate_character_stats(character: Character):
         print()
     
     # Display validation results
+    print_subheader("Validation Summary")
     if validation_result["valid"]:
-        print_success("Character validation passed!")
+        print_success("✓ Character validation passed!")
     else:
-        print_error("Character validation failed!")
+        print_error("✗ Character validation failed!")
     
-    print_subheader("Validation Details")
     print(f"Validation type: {validation_result.get('validation_type', 'unknown')}")
     print(f"Overall summary: {validation_result.get('overall_summary', 'No summary available')}")
     
-    # Display specific validation results based on type
-    if validation_result.get("validation_type") == "reverse_engineered_manual":
-        # Show reverse engineering details
-        if validation_result.get("details"):
-            details = validation_result["details"]
-            print_subheader("Reverse Engineering Analysis")
-            print(f"Expected free points: {details.get('total_expected_free_points', 0)}")
-            print(f"Used free points: {details.get('total_free_points_used', 0)}")
-            print(f"Remaining: {details.get('remaining_free_points', 0)}")
+    # Show detailed validation information based on character type
+    show_detailed_validation_results(character, validation_result, creation_info)
     
-    elif validation_result.get("validation_type") == "custom_manual":
-        # Show custom validation results
-        if validation_result.get("custom_validation"):
-            custom = validation_result["custom_validation"]
-            print_subheader("Custom Character Checks")
-            print(f"Race level correct: {'✓' if custom.get('race_level_correct') else '✗'}")
-            print(f"Stats reasonable: {'✓' if custom.get('stats_reasonable') else '✗'}")
-            print(f"Free points valid: {'✓' if custom.get('free_points_valid') else '✗'}")
+    # Offer additional analysis options
+    print_subheader("Additional Options")
+    print("1. View detailed stat source breakdown")
+    print("2. Export validation report to text file")
+    print("3. Continue to main menu")
     
-    elif validation_result.get("validation_type") == "calculated":
-        # Show calculated character validation
+    choice = input("\nEnter your choice (1-3): ").strip()
+    if choice == '1':
+        show_detailed_stat_breakdown(character, validation_result)
+    elif choice == '2':
+        export_validation_report(character, validation_result, creation_info)
+    # Any other choice (including '3') returns to main menu
+    
+def show_detailed_validation_results(character: Character, validation_result: Dict[str, Any], creation_info: Dict[str, Any]):
+    """
+    Show detailed validation results based on character type.
+    Mirrors the detailed analysis from migration script.
+    """
+    validation_type = validation_result.get('validation_type', 'unknown')
+    character_type = character.data_manager.get_meta("Character Type", "character")
+    
+    # Handle race-leveling characters (familiars/monsters) - ENHANCED DETAIL
+    if validation_type == "race_leveling":
+        print_subheader(f"{character_type.capitalize()} Validation Details")
+        
+        # Show basic character info
+        race_level = character.data_manager.get_meta("Race level", "0")
+        race = character.data_manager.get_meta("Race", "")
+        print(f"Race: {race}")
+        print(f"Race Level: {race_level}")
+        print()
+        
+        # Show any class/profession level issues
+        class_level = int(character.data_manager.get_meta("Class level", "0"))
+        profession_level = int(character.data_manager.get_meta("Profession level", "0"))
+        
+        if class_level > 0:
+            print_error(f"⚠ INVALID: {character_type.capitalize()}s should not have class levels (found: {class_level})")
+        if profession_level > 0:
+            print_error(f"⚠ INVALID: {character_type.capitalize()}s should not have profession levels (found: {profession_level})")
+        
+        # Show detailed stat validation for race-leveling characters
         if validation_result.get("stat_discrepancies"):
-            print_subheader("Stat Discrepancies")
-            for stat, discrepancy in validation_result["stat_discrepancies"].items():
-                status = discrepancy["status"]
-                diff = discrepancy["difference"]
-                print_error(f"{stat}: {status} by {abs(diff)} points")
-    
-    elif validation_result.get("validation_type") == "race_leveling":
-        # NEW: Show race-leveling character validation
-        print_subheader(f"{character_type.capitalize()} Validation")
-        if validation_result.get("stat_discrepancies"):
-            for stat, discrepancy in validation_result["stat_discrepancies"].items():
-                if "level" in stat:
-                    print_error(f"{stat}: {discrepancy}")
+            print_colored("Stat Issues:", 'red', True)
+            for stat, issue in validation_result["stat_discrepancies"].items():
+                if isinstance(issue, dict):
+                    if "status" in issue:
+                        status = issue["status"]
+                        diff = issue.get("difference", 0)
+                        print_error(f"  • {stat}: {status} by {abs(diff)} points")
+                    else:
+                        print_error(f"  • {stat}: {issue}")
                 else:
+                    print_error(f"  • {stat}: {issue}")
+        
+        # Show detailed stat allocation analysis for race-leveling characters
+        if validation_result.get("details") and "stat_allocations" in validation_result["details"]:
+            print_colored("Detailed Stat Allocation Analysis:", 'cyan', True)
+            analysis = validation_result["details"]
+            
+            for stat in STATS:
+                if stat in analysis["stat_allocations"]:
+                    stat_analysis = analysis["stat_allocations"][stat]
+                    base = stat_analysis.get("base", 0)
+                    race_bonus = stat_analysis.get("race_bonus", 0)
+                    item_bonus = stat_analysis.get("item_bonus", 0)
+                    blessing_bonus = stat_analysis.get("blessing_bonus", 0)
+                    free_points_used = stat_analysis.get("free_points_allocated", 0)
+                    current = stat_analysis.get("current", 0)
+                    expected_from_progression = stat_analysis.get("expected_from_progression", None)
+                    expected_total = stat_analysis.get("expected_total", None)
+                    discrepancy = stat_analysis.get("discrepancy", 0)
+                    
+                    # Build breakdown string for race-leveling characters
+                    parts = [f"Base: {base}"]
+                    if race_bonus > 0:
+                        parts.append(f"Race: +{race_bonus}")
+                    if item_bonus > 0:
+                        parts.append(f"Items: +{item_bonus}")
+                    if blessing_bonus > 0:
+                        parts.append(f"Blessing: +{blessing_bonus}")
+                    if free_points_used > 0:
+                        parts.append(f"Free Points: +{free_points_used}")
+                    
+                    breakdown = " + ".join(parts)
+                    print(f"{stat.capitalize()}: {breakdown} = {current}")
+                    
+                    # Show issues using the validation system's expected values
+                    if discrepancy < 0:
+                        print_error(f"  ⚠ IMPOSSIBLE: {stat} needs {abs(discrepancy)} more points than available!")
+                        expected = expected_from_progression or expected_total
+                        if expected is not None:
+                            print_info(f"    Current: {current}, Expected: {expected}")
+                    elif discrepancy > 0:
+                        print_warning(f"  ⚠ EXTRA: {stat} has {discrepancy} unexplained points")
+                        expected = expected_from_progression or expected_total
+                        if expected is not None:
+                            print_info(f"    Current: {current}, Expected: {expected}")
+        
+        # Show free points info for race-leveling characters
+        fp_info = validation_result.get("free_points", {})
+        if fp_info:
+            print()
+            print_colored("Free Points Analysis:", 'yellow', True)
+            expected = fp_info.get('expected_total', 0)
+            spent = fp_info.get('spent', 0)
+            current = fp_info.get('current', 0)
+            difference = fp_info.get('difference', 0)
+            
+            print(f"Expected from race levels: {expected}")
+            print(f"Used in stat allocation: {spent}")
+            print(f"Remaining: {current}")
+            print(f"Balance: {expected} - {spent} - {current} = {difference}")
+            
+            if difference > 0:
+                print_error(f"⚠ MISSING: {character_type.capitalize()} is missing {difference} free points")
+            elif difference < 0:
+                print_error(f"⚠ EXCESS: {character_type.capitalize()} has {abs(difference)} excess free points")
+    
+    # Handle manual characters - ENHANCED DETAIL
+    elif validation_type in ["reverse_engineered_manual", "custom_manual"]:
+        print_subheader("Manual Character Validation Details")
+        
+        if validation_type == "reverse_engineered_manual":
+            # Show reverse engineering details
+            if validation_result.get("details"):
+                details = validation_result["details"]
+                print_colored("Free Points Analysis:", 'cyan', True)
+                print(f"Expected free points from progression: {details.get('total_expected_free_points', 0)}")
+                print(f"Used in stat allocation: {details.get('total_free_points_used', 0)}")
+                print(f"Calculated remaining: {details.get('remaining_free_points', 0)}")
+                
+                # Show detailed stat allocation
+                if "stat_allocations" in details:
+                    print()
+                    print_colored("Stat Allocation Breakdown:", 'cyan', True)
+                    for stat in STATS:
+                        if stat in details["stat_allocations"]:
+                            stat_analysis = details["stat_allocations"][stat]
+                            base = stat_analysis.get("base", 0)
+                            class_bonus = stat_analysis.get("class_bonus", 0)
+                            profession_bonus = stat_analysis.get("profession_bonus", 0)
+                            race_bonus = stat_analysis.get("race_bonus", 0)
+                            free_points_used = stat_analysis.get("free_points_allocated", 0)
+                            current = stat_analysis.get("current", 0)
+                            expected_from_progression = stat_analysis.get("expected_from_progression", None)
+                            expected_total = stat_analysis.get("expected_total", None)
+                            discrepancy = stat_analysis.get("discrepancy", 0)
+                            
+                            # Build breakdown string
+                            parts = [f"Base: {base}"]
+                            if class_bonus > 0:
+                                parts.append(f"Class: +{class_bonus}")
+                            if profession_bonus > 0:
+                                parts.append(f"Profession: +{profession_bonus}")
+                            if race_bonus > 0:
+                                parts.append(f"Race: +{race_bonus}")
+                            if free_points_used > 0:
+                                parts.append(f"Free Points: +{free_points_used}")
+                            
+                            breakdown = " + ".join(parts)
+                            print(f"{stat.capitalize()}: {breakdown} = {current}")
+                            
+                            # Show issues using the validation system's expected values
+                            if discrepancy < 0:
+                                print_error(f"  ⚠ IMPOSSIBLE: {stat} needs {abs(discrepancy)} more points than available!")
+                                expected = expected_from_progression or expected_total
+                                if expected is not None:
+                                    print_info(f"    Current: {current}, Expected: {expected}")
+                            elif discrepancy > 0:
+                                print_warning(f"  ⚠ UNUSED: {stat} has {discrepancy} excess points")
+                                expected = expected_from_progression or expected_total
+                                if expected is not None:
+                                    print_info(f"    Current: {current}, Expected: {expected}")
+        
+        elif validation_type == "custom_manual":
+            # Show custom validation results
+            if validation_result.get("custom_validation"):
+                custom = validation_result["custom_validation"]
+                print_colored("Custom Character Checks:", 'cyan', True)
+                print(f"Race level calculation: {'✓' if custom.get('race_level_correct') else '✗'}")
+                print(f"Stats within reasonable range: {'✓' if custom.get('stats_reasonable') else '✗'}")
+                print(f"Free points non-negative: {'✓' if custom.get('free_points_valid') else '✗'}")
+                
+                # Show warnings and errors
+                if custom.get("warnings"):
+                    print()
+                    print_colored("Warnings:", 'yellow', True)
+                    for warning in custom["warnings"]:
+                        print_warning(f"  • {warning}")
+                
+                if custom.get("errors"):
+                    print()
+                    print_colored("Errors:", 'red', True)
+                    for error in custom["errors"]:
+                        print_error(f"  • {error}")
+        
+        # Show stat discrepancies for manual characters
+        if validation_result.get("stat_discrepancies"):
+            print()
+            print_colored("Stat Discrepancies:", 'red', True)
+            for stat, discrepancy in validation_result["stat_discrepancies"].items():
+                if isinstance(discrepancy, dict):
+                    if "difference" in discrepancy:
+                        diff = discrepancy["difference"]
+                        diff_str = f"+{diff}" if diff > 0 else str(diff)
+                        print_error(f"  • {stat}: {diff_str} points from expected")
+                    elif "impossible_allocation" in discrepancy:
+                        impossible = discrepancy["impossible_allocation"]
+                        print_error(f"  • {stat}: impossible allocation of {abs(impossible)} points")
+                    else:
+                        print_error(f"  • {stat}: {discrepancy}")
+                else:
+                    print_error(f"  • {stat}: {discrepancy}")
+    
+    # Handle calculated characters - ENHANCED DETAIL
+    elif validation_type == "calculated":
+        print_subheader("Calculated Character Validation Details")
+        
+        # Show detailed stat breakdown if available
+        if validation_result.get("details") and "stat_allocations" in validation_result["details"]:
+            print_colored("Detailed Stat Allocation Analysis:", 'cyan', True)
+            analysis = validation_result["details"]
+            
+            for stat in STATS:
+                if stat in analysis["stat_allocations"]:
+                    stat_analysis = analysis["stat_allocations"][stat]
+                    base = stat_analysis.get("base", 0)
+                    class_bonus = stat_analysis.get("class_bonus", 0)
+                    profession_bonus = stat_analysis.get("profession_bonus", 0)
+                    race_bonus = stat_analysis.get("race_bonus", 0)
+                    free_points_used = stat_analysis.get("free_points_allocated", 0)
+                    current = stat_analysis.get("current", 0)
+                    expected_from_progression = stat_analysis.get("expected_from_progression", None)
+                    expected_total = stat_analysis.get("expected_total", None)
+                    expected_base = stat_analysis.get("expected_base", None)
+                    discrepancy = stat_analysis.get("discrepancy", 0)
+                    
+                    # Build breakdown string
+                    parts = [f"Base: {base}"]
+                    if class_bonus > 0:
+                        parts.append(f"Class: +{class_bonus}")
+                    if profession_bonus > 0:
+                        parts.append(f"Profession: +{profession_bonus}")
+                    if race_bonus > 0:
+                        parts.append(f"Race: +{race_bonus}")
+                    if free_points_used > 0:
+                        parts.append(f"Free Points: +{free_points_used}")
+                    
+                    breakdown = " + ".join(parts)
+                    print(f"{stat.capitalize()}: {breakdown} = {current}")
+                    
+                    # Show issues using the validation system's expected values
+                    if discrepancy < 0:
+                        print_error(f"  ⚠ IMPOSSIBLE: {stat} needs {abs(discrepancy)} more points than available!")
+                        expected = expected_from_progression or expected_total or expected_base
+                        if expected is not None:
+                            print_info(f"    Current: {current}, Expected: {expected}")
+                    elif discrepancy > 0:
+                        print_warning(f"  ⚠ UNUSED: {stat} has {discrepancy} excess points")
+                        expected = expected_from_progression or expected_total or expected_base
+                        if expected is not None:
+                            print_info(f"    Current: {current}, Expected: {expected}")
+        
+        # Show free points summary for calculated characters
+        print()
+        print_colored("Free Points Summary:", 'cyan', True)
+        if validation_result.get("details"):
+            analysis = validation_result["details"]
+            total_expected = analysis.get("total_expected_free_points", 0)
+            total_used = analysis.get("total_free_points_used", 0)
+            remaining = analysis.get("remaining_free_points", 0)
+            print(f"Total Expected: {total_expected}")
+            print(f"Used in Allocation: {total_used}")
+            print(f"Calculated Remaining: {remaining}")
+            
+            if remaining < 0:
+                print_error(f"Character has {abs(remaining)} excess free points")
+            elif remaining > 0:
+                print_error(f"Character is missing {remaining} free points")
+        else:
+            # Fallback if no detailed analysis available
+            fp_info = validation_result.get("free_points", {})
+            for key, value in fp_info.items():
+                print(f"{key.replace('_', ' ').title()}: {value}")
+        
+        # Show stat discrepancies for calculated characters
+        if validation_result.get("stat_discrepancies"):
+            print()
+            print_colored("Stat Discrepancies:", 'red', True)
+            for stat, discrepancy in validation_result["stat_discrepancies"].items():
+                if isinstance(discrepancy, dict):
                     status = discrepancy.get("status", "error")
                     diff = discrepancy.get("difference", 0)
-                    print_error(f"{stat}: {status} by {abs(diff)} points")
+                    print_error(f"  • {stat}: {status} by {abs(diff)} points")
+                else:
+                    print_error(f"  • {stat}: {discrepancy}")
     
-    # Show auto-correction details
+    # Show auto-correction details if not already shown
     if not validation_result.get("free_points_auto_corrected", False):
         correction_message = validation_result.get("auto_correction_message", "")
-        if correction_message:
+        if correction_message and "no auto-correction" not in correction_message.lower():
             print_subheader("Auto-Correction Analysis")
             print_info(correction_message)
-    
-    # Show warnings and errors
-    if validation_result.get("warnings"):
-        print_subheader("Warnings")
-        for warning in validation_result["warnings"]:
-            print_warning(warning)
-    
-    if validation_result.get("errors"):
-        print_subheader("Errors") 
-        for error in validation_result["errors"]:
-            print_error(error)
     
     # Show character type after validation
     updated_creation_info = character.get_creation_info()
@@ -1819,6 +2070,409 @@ def validate_character_stats(character: Character):
         print(f"Validation status: {character.validation_status}")
     
     pause_screen()
+
+def export_validation_report(character: Character, validation_result: Dict[str, Any], creation_info: Dict[str, Any]):
+    """Export detailed validation report to a text file."""
+        
+    clear_screen()
+    print_header("Export Validation Report")
+    
+    # Get filename from user
+    character_name_safe = character.name.lower().replace(' ', '_').replace('/', '_').replace('\\', '_')
+    default_filename = f"{character_name_safe}_validation_report.txt"
+    
+    print_info(f"Default filename: {default_filename}")
+    filename = input("Enter filename (or press Enter for default): ").strip()
+    
+    if not filename:
+        filename = default_filename
+    elif not filename.endswith('.txt'):
+        filename += '.txt'
+    
+    try:
+        print_loading("Generating validation report")
+        
+        with open(filename, 'w', encoding='utf-8') as f:
+            # Write header
+            f.write("=" * 80 + "\n")
+            f.write(f"CHARACTER VALIDATION REPORT\n")
+            f.write(f"Generated: {datetime.datetime.now().strftime('%Y-%m-%d %H:%M:%S')}\n")
+            f.write("=" * 80 + "\n\n")
+            
+            # Write character information
+            f.write("CHARACTER INFORMATION\n")
+            f.write("-" * 40 + "\n")
+            f.write(f"Name: {character.name}\n")
+            f.write(f"Type: {creation_info['current_type']}\n")
+            if creation_info.get('original_type'):
+                f.write(f"Originally: {creation_info['original_type']}\n")
+                f.write(f"Converted: {creation_info['converted_at']}\n")
+            f.write(f"Validation status: {character.validation_status}\n\n")
+            
+            # Write validation summary
+            f.write("VALIDATION SUMMARY\n")
+            f.write("-" * 40 + "\n")
+            f.write(f"Result: {'PASSED' if validation_result['valid'] else 'FAILED'}\n")
+            f.write(f"Validation type: {validation_result.get('validation_type', 'unknown')}\n")
+            f.write(f"Overall summary: {validation_result.get('overall_summary', 'No summary available')}\n\n")
+            
+            # Write auto-correction information
+            if validation_result.get("converted_to_calculated", False):
+                f.write("AUTO-CONVERSION\n")
+                f.write("-" * 40 + "\n")
+                f.write("Manual character automatically converted to calculated character\n")
+                f.write(f"Message: {validation_result.get('conversion_message', 'Character converted successfully')}\n")
+                f.write("Original manual data archived in creation history\n\n")
+            
+            if validation_result.get("free_points_auto_corrected", False):
+                f.write("AUTO-CORRECTION\n")
+                f.write("-" * 40 + "\n")
+                correction_message = validation_result.get("auto_correction_message", "")
+                points_added = validation_result.get("free_points_added", 0)
+                f.write(f"Free points auto-corrected: {correction_message}\n")
+                if points_added > 0:
+                    f.write(f"Additional free points available: {points_added}\n")
+                f.write("\n")
+            
+            # Write detailed validation results
+            write_detailed_validation_to_file(f, character, validation_result)
+            
+            # Write current character stats
+            f.write("CURRENT CHARACTER STATS\n")
+            f.write("-" * 40 + "\n")
+            for stat in STATS:
+                sources = character.data_manager.get_stat_sources(stat)
+                current = character.data_manager.get_stat(stat)
+                modifier = character.data_manager.get_stat_modifier(stat)
+                
+                # Build breakdown string
+                source_parts = []
+                for source, value in sources.items():
+                    if value > 0:
+                        source_parts.append(f"{source}: {value}")
+                
+                if len(source_parts) > 1:
+                    source_str = " (" + " + ".join(source_parts) + ")"
+                    f.write(f"{stat.capitalize()}: {current}{source_str} (modifier: {modifier})\n")
+                else:
+                    f.write(f"{stat.capitalize()}: {current} (modifier: {modifier})\n")
+            
+            # Write free points status
+            f.write(f"\nFree Points: {character.level_system.free_points}")
+            if character.level_system.free_points < 0:
+                f.write(" (overspent)")
+            elif character.level_system.free_points == 0:
+                f.write(" (none available)")
+            else:
+                f.write(" (available)")
+            f.write("\n\n")
+            
+            # Write character meta information
+            f.write("CHARACTER META INFORMATION\n")
+            f.write("-" * 40 + "\n")
+            for key, value in character.data_manager.get_all_meta().items():
+                f.write(f"{key}: {value}\n")
+            f.write("\n")
+            
+            # Write tier thresholds if applicable
+            if not character.is_race_leveling_type():
+                f.write("TIER CONFIGURATION\n")
+                f.write("-" * 40 + "\n")
+                f.write(f"Tier thresholds: {character.data_manager.tier_thresholds}\n\n")
+            
+            # Write footer
+            f.write("=" * 80 + "\n")
+            f.write("END OF VALIDATION REPORT\n")
+            f.write("=" * 80 + "\n")
+        
+        print_success(f"Validation report exported to: {filename}")
+        print_info(f"File size: {os.path.getsize(filename)} bytes")
+        
+    except Exception as e:
+        print_error(f"Error exporting validation report: {str(e)}")
+    
+    pause_screen()
+
+def write_detailed_validation_to_file(f, character: Character, validation_result: Dict[str, Any]):
+    """Write detailed validation results to file (plain text, no colors)."""
+    validation_type = validation_result.get('validation_type', 'unknown')
+    character_type = character.data_manager.get_meta("Character Type", "character")
+    
+    f.write("DETAILED VALIDATION RESULTS\n")
+    f.write("-" * 40 + "\n")
+    
+    # Handle race-leveling characters (familiars/monsters)
+    if validation_type == "race_leveling":
+        f.write(f"{character_type.upper()} VALIDATION DETAILS\n\n")
+        
+        # Show basic character info
+        race_level = character.data_manager.get_meta("Race level", "0")
+        race = character.data_manager.get_meta("Race", "")
+        f.write(f"Race: {race}\n")
+        f.write(f"Race Level: {race_level}\n\n")
+        
+        # Show any class/profession level issues
+        class_level = int(character.data_manager.get_meta("Class level", "0"))
+        profession_level = int(character.data_manager.get_meta("Profession level", "0"))
+        
+        if class_level > 0:
+            f.write(f"INVALID: {character_type.capitalize()}s should not have class levels (found: {class_level})\n")
+        if profession_level > 0:
+            f.write(f"INVALID: {character_type.capitalize()}s should not have profession levels (found: {profession_level})\n")
+        
+        # Show detailed stat validation for race-leveling characters
+        if validation_result.get("stat_discrepancies"):
+            f.write("\nStat Issues:\n")
+            for stat, issue in validation_result["stat_discrepancies"].items():
+                if isinstance(issue, dict):
+                    if "status" in issue:
+                        status = issue["status"]
+                        diff = issue.get("difference", 0)
+                        f.write(f"  • {stat}: {status} by {abs(diff)} points\n")
+                    else:
+                        f.write(f"  • {stat}: {issue}\n")
+                else:
+                    f.write(f"  • {stat}: {issue}\n")
+        
+        # Show detailed stat allocation analysis
+        if validation_result.get("details") and "stat_allocations" in validation_result["details"]:
+            f.write("\nDetailed Stat Allocation Analysis:\n")
+            analysis = validation_result["details"]
+            
+            for stat in STATS:
+                if stat in analysis["stat_allocations"]:
+                    stat_analysis = analysis["stat_allocations"][stat]
+                    base = stat_analysis.get("base", 0)
+                    race_bonus = stat_analysis.get("race_bonus", 0)
+                    item_bonus = stat_analysis.get("item_bonus", 0)
+                    blessing_bonus = stat_analysis.get("blessing_bonus", 0)
+                    free_points_used = stat_analysis.get("free_points_allocated", 0)
+                    current = stat_analysis.get("current", 0)
+                    expected_from_progression = stat_analysis.get("expected_from_progression", None)
+                    expected_total = stat_analysis.get("expected_total", None)
+                    discrepancy = stat_analysis.get("discrepancy", 0)
+                    
+                    # Build breakdown string
+                    parts = [f"Base: {base}"]
+                    if race_bonus > 0:
+                        parts.append(f"Race: +{race_bonus}")
+                    if item_bonus > 0:
+                        parts.append(f"Items: +{item_bonus}")
+                    if blessing_bonus > 0:
+                        parts.append(f"Blessing: +{blessing_bonus}")
+                    if free_points_used > 0:
+                        parts.append(f"Free Points: +{free_points_used}")
+                    
+                    breakdown = " + ".join(parts)
+                    f.write(f"{stat.capitalize()}: {breakdown} = {current}\n")
+                    
+                    # Show issues using the validation system's expected values
+                    if discrepancy < 0:
+                        f.write(f"  WARNING: {stat} needs {abs(discrepancy)} more points than available!\n")
+                        expected = expected_from_progression or expected_total
+                        if expected is not None:
+                            f.write(f"    Current: {current}, Expected: {expected}\n")
+                    elif discrepancy > 0:
+                        f.write(f"  WARNING: {stat} has {discrepancy} unexplained points\n")
+                        expected = expected_from_progression or expected_total
+                        if expected is not None:
+                            f.write(f"    Current: {current}, Expected: {expected}\n")
+        
+        # Show free points info
+        fp_info = validation_result.get("free_points", {})
+        if fp_info:
+            f.write("\nFree Points Analysis:\n")
+            expected = fp_info.get('expected_total', 0)
+            spent = fp_info.get('spent', 0)
+            current = fp_info.get('current', 0)
+            difference = fp_info.get('difference', 0)
+            
+            f.write(f"Expected from race levels: {expected}\n")
+            f.write(f"Used in stat allocation: {spent}\n")
+            f.write(f"Remaining: {current}\n")
+            f.write(f"Balance: {expected} - {spent} - {current} = {difference}\n")
+            
+            if difference > 0:
+                f.write(f"MISSING: {character_type.capitalize()} is missing {difference} free points\n")
+            elif difference < 0:
+                f.write(f"EXCESS: {character_type.capitalize()} has {abs(difference)} excess free points\n")
+    
+    # Handle manual characters
+    elif validation_type in ["reverse_engineered_manual", "custom_manual"]:
+        f.write("MANUAL CHARACTER VALIDATION DETAILS\n\n")
+        
+        if validation_type == "reverse_engineered_manual":
+            # Show reverse engineering details
+            if validation_result.get("details"):
+                details = validation_result["details"]
+                f.write("Reverse Engineering Analysis:\n")
+                f.write(f"Expected free points from progression: {details.get('total_expected_free_points', 0)}\n")
+                f.write(f"Used in stat allocation: {details.get('total_free_points_used', 0)}\n")
+                f.write(f"Calculated remaining: {details.get('remaining_free_points', 0)}\n\n")
+                
+                # Show detailed stat allocation
+                if "stat_allocations" in details:
+                    f.write("Stat Allocation Breakdown:\n")
+                    for stat in STATS:
+                        if stat in details["stat_allocations"]:
+                            stat_analysis = details["stat_allocations"][stat]
+                            base = stat_analysis.get("base", 0)
+                            class_bonus = stat_analysis.get("class_bonus", 0)
+                            profession_bonus = stat_analysis.get("profession_bonus", 0)
+                            race_bonus = stat_analysis.get("race_bonus", 0)
+                            free_points_used = stat_analysis.get("free_points_allocated", 0)
+                            current = stat_analysis.get("current", 0)
+                            expected_from_progression = stat_analysis.get("expected_from_progression", None)
+                            expected_total = stat_analysis.get("expected_total", None)
+                            discrepancy = stat_analysis.get("discrepancy", 0)
+                            
+                            # Build breakdown string
+                            parts = [f"Base: {base}"]
+                            if class_bonus > 0:
+                                parts.append(f"Class: +{class_bonus}")
+                            if profession_bonus > 0:
+                                parts.append(f"Profession: +{profession_bonus}")
+                            if race_bonus > 0:
+                                parts.append(f"Race: +{race_bonus}")
+                            if free_points_used > 0:
+                                parts.append(f"Free Points: +{free_points_used}")
+                            
+                            breakdown = " + ".join(parts)
+                            f.write(f"{stat.capitalize()}: {breakdown} = {current}\n")
+                            
+                            # Show issues using the validation system's expected values
+                            if discrepancy < 0:
+                                f.write(f"  WARNING: {stat} needs {abs(discrepancy)} more points than available!\n")
+                                expected = expected_from_progression or expected_total
+                                if expected is not None:
+                                    f.write(f"    Current: {current}, Expected: {expected}\n")
+                            elif discrepancy > 0:
+                                f.write(f"  WARNING: {stat} has {discrepancy} excess points\n")
+                                expected = expected_from_progression or expected_total
+                                if expected is not None:
+                                    f.write(f"    Current: {current}, Expected: {expected}\n")
+        
+        elif validation_type == "custom_manual":
+            # Show custom validation results
+            if validation_result.get("custom_validation"):
+                custom = validation_result["custom_validation"]
+                f.write("Custom Character Checks:\n")
+                f.write(f"Race level calculation: {'PASS' if custom.get('race_level_correct') else 'FAIL'}\n")
+                f.write(f"Stats within reasonable range: {'PASS' if custom.get('stats_reasonable') else 'FAIL'}\n")
+                f.write(f"Free points non-negative: {'PASS' if custom.get('free_points_valid') else 'FAIL'}\n\n")
+                
+                # Show warnings and errors
+                if custom.get("warnings"):
+                    f.write("Warnings:\n")
+                    for warning in custom["warnings"]:
+                        f.write(f"  • {warning}\n")
+                    f.write("\n")
+                
+                if custom.get("errors"):
+                    f.write("Errors:\n")
+                    for error in custom["errors"]:
+                        f.write(f"  • {error}\n")
+                    f.write("\n")
+        
+        # Show stat discrepancies for manual characters
+        if validation_result.get("stat_discrepancies"):
+            f.write("Stat Discrepancies:\n")
+            for stat, discrepancy in validation_result["stat_discrepancies"].items():
+                if isinstance(discrepancy, dict):
+                    if "difference" in discrepancy:
+                        diff = discrepancy["difference"]
+                        diff_str = f"+{diff}" if diff > 0 else str(diff)
+                        f.write(f"  • {stat}: {diff_str} points from expected\n")
+                    elif "impossible_allocation" in discrepancy:
+                        impossible = discrepancy["impossible_allocation"]
+                        f.write(f"  • {stat}: impossible allocation of {abs(impossible)} points\n")
+                    else:
+                        f.write(f"  • {stat}: {discrepancy}\n")
+                else:
+                    f.write(f"  • {stat}: {discrepancy}\n")
+    
+    # Handle calculated characters
+    elif validation_type == "calculated":
+        f.write("CALCULATED CHARACTER VALIDATION DETAILS\n\n")
+        
+        # Show detailed stat breakdown if available
+        if validation_result.get("details") and "stat_allocations" in validation_result["details"]:
+            f.write("Detailed Stat Allocation Analysis:\n")
+            analysis = validation_result["details"]
+            
+            for stat in STATS:
+                if stat in analysis["stat_allocations"]:
+                    stat_analysis = analysis["stat_allocations"][stat]
+                    base = stat_analysis.get("base", 0)
+                    class_bonus = stat_analysis.get("class_bonus", 0)
+                    profession_bonus = stat_analysis.get("profession_bonus", 0)
+                    race_bonus = stat_analysis.get("race_bonus", 0)
+                    free_points_used = stat_analysis.get("free_points_allocated", 0)
+                    current = stat_analysis.get("current", 0)
+                    expected_from_progression = stat_analysis.get("expected_from_progression", None)
+                    expected_total = stat_analysis.get("expected_total", None)
+                    expected_base = stat_analysis.get("expected_base", None)
+                    discrepancy = stat_analysis.get("discrepancy", 0)
+                    
+                    # Build breakdown string
+                    parts = [f"Base: {base}"]
+                    if class_bonus > 0:
+                        parts.append(f"Class: +{class_bonus}")
+                    if profession_bonus > 0:
+                        parts.append(f"Profession: +{profession_bonus}")
+                    if race_bonus > 0:
+                        parts.append(f"Race: +{race_bonus}")
+                    if free_points_used > 0:
+                        parts.append(f"Free Points: +{free_points_used}")
+                    
+                    breakdown = " + ".join(parts)
+                    f.write(f"{stat.capitalize()}: {breakdown} = {current}\n")
+                    
+                    # Show issues using the validation system's expected values
+                    if discrepancy < 0:
+                        f.write(f"  WARNING: {stat} needs {abs(discrepancy)} more points than available!\n")
+                        expected = expected_from_progression or expected_total or expected_base
+                        if expected is not None:
+                            f.write(f"    Current: {current}, Expected: {expected}\n")
+                    elif discrepancy > 0:
+                        f.write(f"  WARNING: {stat} has {discrepancy} excess points\n")
+                        expected = expected_from_progression or expected_total or expected_base
+                        if expected is not None:
+                            f.write(f"    Current: {current}, Expected: {expected}\n")
+        
+        # Show free points summary
+        f.write("\nFree Points Summary:\n")
+        if validation_result.get("details"):
+            analysis = validation_result["details"]
+            total_expected = analysis.get("total_expected_free_points", 0)
+            total_used = analysis.get("total_free_points_used", 0)
+            remaining = analysis.get("remaining_free_points", 0)
+            f.write(f"Total Expected: {total_expected}\n")
+            f.write(f"Used in Allocation: {total_used}\n")
+            f.write(f"Calculated Remaining: {remaining}\n")
+            
+            if remaining < 0:
+                f.write(f"Character has {abs(remaining)} excess free points\n")
+            elif remaining > 0:
+                f.write(f"Character is missing {remaining} free points\n")
+        else:
+            # Fallback if no detailed analysis available
+            fp_info = validation_result.get("free_points", {})
+            for key, value in fp_info.items():
+                f.write(f"{key.replace('_', ' ').title()}: {value}\n")
+        
+        # Show stat discrepancies
+        if validation_result.get("stat_discrepancies"):
+            f.write("\nStat Discrepancies:\n")
+            for stat, discrepancy in validation_result["stat_discrepancies"].items():
+                if isinstance(discrepancy, dict):
+                    status = discrepancy.get("status", "error")
+                    diff = discrepancy.get("difference", 0)
+                    f.write(f"  • {stat}: {status} by {abs(diff)} points\n")
+                else:
+                    f.write(f"  • {stat}: {discrepancy}\n")
+    
+    f.write("\n")
 
 def show_detailed_stat_breakdown(character: Character, validation_result: Dict[str, Any]):
     """Show detailed breakdown of stat sources - same for all character types."""
@@ -2716,7 +3370,7 @@ def allocate_points(character: Character):
     # FIXED: Handle all free point scenarios, including negative
     print_subheader("Free Points Status")
     if free_points > 0:
-        print_colored(f"Available: {free_points} points", 'green')
+        print_colored(f"Available: {free_points} points", 'yellow')
     elif free_points == 0:
         print_colored("Available: 0 points", 'yellow')
         print_info("No free points available to allocate.")
