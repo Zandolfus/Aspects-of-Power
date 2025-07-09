@@ -1,0 +1,136 @@
+Based on your current Foundry system structure, here's exactly where to place each file in your repository:
+
+## File Placement Guide
+
+### 1. Data Models File
+**Location:** `module/data-models.mjs`
+- **Action:** Create this new file
+- **Purpose:** Replace the old template.json approach with modern DataModel classes
+
+### 2. Enhanced Actor Document
+**Location:** `module/documents/actor.mjs` 
+- **Action:** Replace the existing file completely
+- **Current file:** Your existing `module/documents/actor.mjs` has basic structure but needs complete overhaul
+
+### 3. Leveling System
+**Location:** `module/systems/leveling.mjs`
+- **Action:** Create new directory `module/systems/` and add this file
+- **Purpose:** Handles all character progression logic
+
+### 4. Equipment System  
+**Location:** `module/systems/equipment.mjs`
+- **Action:** Add to the `module/systems/` directory
+- **Purpose:** Manages equipment effects and active effects
+
+### 5. Combat System
+**Location:** `module/systems/combat.mjs`
+- **Action:** Add to the `module/systems/` directory  
+- **Purpose:** Implements your game's combat formulas
+
+## Required Changes to Existing Files
+
+### Update `module/aspects-of-power.mjs`
+You need to modify your main system file to import and initialize the new systems:
+
+```javascript
+// Add these imports at the top
+import { CharacterDataModel, CreatureDataModel, WeaponDataModel, ArmorDataModel, AbilityDataModel } from './data-models.mjs';
+import { LevelingSystem } from './systems/leveling.mjs';
+import { EquipmentSystem } from './systems/equipment.mjs';
+import { CombatSystem } from './systems/combat.mjs';
+
+// In the init hook, add:
+Hooks.once('init', function () {
+  // Existing code...
+  
+  // Register data models
+  CONFIG.Actor.dataModels = {
+    character: CharacterDataModel,
+    familiar: CreatureDataModel,
+    monster: CreatureDataModel
+  };
+  
+  CONFIG.Item.dataModels = {
+    weapon: WeaponDataModel,
+    armor: ArmorDataModel,
+    ability: AbilityDataModel,
+    spell: AbilityDataModel,
+    item: foundry.abstract.TypeDataModel // fallback
+  };
+  
+  // Initialize systems
+  EquipmentSystem.initialize();
+  CombatSystem.initialize();
+  
+  // Rest of existing code...
+});
+```
+
+### Update `system.json`
+Add the new document types to support the enhanced data models:
+
+```json
+{
+  "documentTypes": {
+    "Actor": {
+      "character": {},
+      "familiar": {},
+      "monster": {}
+    },
+    "Item": {
+      "weapon": {},
+      "armor": {},
+      "ability": {},
+      "spell": {},
+      "accessory": {},
+      "item": {}
+    }
+  }
+}
+```
+
+## Directory Structure After Changes
+
+```
+your-repo/
+├── module/
+│   ├── aspects-of-power.mjs           # Modified
+│   ├── data-models.mjs                # NEW
+│   ├── documents/
+│   │   ├── actor.mjs                  # Replaced
+│   │   └── item.mjs                   # Keep existing
+│   ├── systems/                       # NEW DIRECTORY
+│   │   ├── leveling.mjs               # NEW
+│   │   ├── equipment.mjs              # NEW
+│   │   └── combat.mjs                 # NEW
+│   ├── sheets/
+│   │   ├── actor-sheet.mjs            # Keep existing
+│   │   └── item-sheet.mjs             # Keep existing
+│   └── helpers/
+│       ├── config.mjs                 # Keep existing
+│       ├── effects.mjs                # Keep existing
+│       └── templates.mjs              # Keep existing
+├── templates/                         # Keep existing
+├── css/                              # Keep existing
+├── lang/                             # Keep existing
+├── system.json                       # Modified
+└── ...other files
+```
+
+## Implementation Order
+
+1. **First:** Create `module/data-models.mjs`
+2. **Second:** Create `module/systems/` directory and add all three system files
+3. **Third:** Replace `module/documents/actor.mjs` 
+4. **Fourth:** Update `module/aspects-of-power.mjs` with the imports and initialization
+5. **Fifth:** Update `system.json` with new document types
+6. **Last:** Test the system to ensure everything loads properly
+
+## Important Notes
+
+- **Backup first:** Make sure to backup your existing `module/documents/actor.mjs` before replacing it
+- **Version compatibility:** These files are designed for Foundry V11+, which matches your current `system.json` compatibility
+- **Template files:** You may need to update your actor sheet templates in `templates/actor/` to work with the new data structure
+- **Migration:** Existing characters will need data migration when you first load the updated system
+
+Would you like me to provide the migration code to handle existing character data, or help you update the actor sheet templates next?
